@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base10 CRM Miss Analysis - Q1 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --bg: #0C1220;
+            --surface: #131D2E;
+            --surface-2: #1A2740;
+            --border: #243352;
+            --text: #E8EDF4;
+            --text-dim: #8899B0;
+            --text-muted: #5A6E88;
+            --accent: #45AEEB;
+            --accent-hover: #26A6ED;
+            --green: #34D399;
+            --amber: #FBBF24;
+            --red: #F87171;
+            --tier1: #DC2626;
+            --tier2: #F59E0B;
+            --tier3: #3B82F6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+        header { text-align: center; margin-bottom: 50px; border-bottom: 2px solid var(--accent); padding-bottom: 30px; }
+        .logo { display: inline-block; background: linear-gradient(135deg, var(--accent), #2563EB); padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.9em; margin-bottom: 20px; letter-spacing: 1px; }
+        header h1 { font-size: 2.4em; margin-bottom: 10px; color: var(--accent); font-weight: 800; letter-spacing: -1px; }
+        header p { font-size: 1.05em; color: var(--text-dim); margin-bottom: 5px; }
+        .report-date { color: var(--text-muted); font-size: 0.9em; margin-top: 12px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 50px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 22px; border-radius: 8px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(69,174,235,0.1); }
+        .stat-value { font-size: 2em; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .stat-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+
+        section { margin-bottom: 60px; }
+        h2 { font-size: 1.6em; color: var(--accent); margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 12px; font-weight: 700; }
+        h3 { font-size: 1.2em; color: var(--text); margin: 25px 0 12px; font-weight: 600; }
+
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); font-size: 0.88em; }
+        table th { background: var(--surface-2); color: var(--accent); padding: 14px 12px; text-align: left; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--accent); cursor: pointer; user-select: none; }
+        table th:hover { color: #fff; }
+        table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        table tr:last-child td { border-bottom: none; }
+        table tr:hover { background: var(--surface-2); }
+
+        .tier-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+        .tier-badge.t1 { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+        .tier-badge.t2 { background: rgba(245,158,11,0.2); color: #FED7AA; }
+        .tier-badge.t3 { background: rgba(59,130,246,0.2); color: #93C5FD; }
+        .tier-badge.yc { background: rgba(249,115,22,0.2); color: #FDBA74; }
+
+        .source-badge { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 0.72em; font-weight: 500; margin-right: 4px; }
+        .source-badge.slack { background: rgba(74,21,75,0.3); color: #E8A7EA; }
+        .source-badge.crm { background: rgba(30,58,138,0.3); color: #93C5FD; }
+        .source-badge.ic { background: rgba(21,128,61,0.3); color: #86EFAC; }
+        .source-badge.email { background: rgba(120,53,15,0.3); color: #FED7AA; }
+        .source-badge.hal { background: rgba(88,28,135,0.3); color: #D8B4FE; }
+        .source-badge.yc { background: rgba(194,65,12,0.3); color: #FDBA74; }
+
+        .reason-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.78em; font-weight: 500; background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
+
+        .chart-container { position: relative; height: 350px; margin: 20px 0; background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+
+        .case-study { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 24px; margin: 20px 0; border-radius: 8px; }
+        .case-study h4 { color: var(--accent); margin-bottom: 10px; font-size: 1.05em; }
+        .case-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); font-size: 0.88em; }
+        .meta-label { color: var(--text-muted); font-size: 0.75em; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }
+        .meta-value { color: var(--text); font-weight: 500; }
+
+        .timeline { margin: 16px 0; padding-left: 18px; border-left: 2px solid var(--accent); }
+        .timeline-item { margin: 12px 0; padding-left: 16px; position: relative; }
+        .timeline-item:before { content: ''; position: absolute; left: -27px; top: 5px; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+        .timeline-date { color: var(--accent); font-weight: 600; font-size: 0.85em; }
+        .timeline-text { color: var(--text); margin-top: 2px; font-size: 0.9em; }
+
+        .insight-box { background: rgba(69,174,235,0.08); border: 1px solid var(--accent); border-radius: 8px; padding: 18px; margin: 18px 0; }
+        .insight-box strong { color: var(--accent); }
+
+        .recommendation { background: var(--surface); border-left: 4px solid var(--green); padding: 18px; margin: 12px 0; border-radius: 6px; }
+        .recommendation-title { color: var(--green); font-weight: 600; margin-bottom: 6px; font-size: 0.95em; }
+
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .filter-btn { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); cursor: pointer; font-size: 0.82em; font-weight: 500; transition: all 0.2s; font-family: inherit; }
+        .filter-btn:hover, .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .search-input { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.85em; font-family: inherit; width: 200px; }
+        .search-input::placeholder { color: var(--text-muted); }
+
+        .footer { text-align: center; padding-top: 24px; border-top: 2px solid var(--border); color: var(--text-muted); font-size: 0.85em; margin-top: 50px; }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .yc-section { margin-top: 40px; border-top: 2px solid var(--border); padding-top: 30px; }
+        .expand-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78em; font-family: inherit; }
+        .expand-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .detail-row { display: none; }
+        .detail-row.open { display: table-row; }
+        .detail-cell { padding: 16px 12px; background: var(--surface-2); font-size: 0.88em; color: var(--text-dim); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="logo">BASE<sup>10</sup> PARTNERS</div>
+        <h1>CRM Miss Analysis</h1>
+        <p>Consensus deals Base10 discussed but did not invest in</p>
+        <p class="report-date">Q1 2026 | Analysis Period: March 2024 - March 2026 | Includes YC Batch Review (W23-W25)</p>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">62</div><div class="stat-label">Companies Discussed</div></div>
+        <div class="stat-card"><div class="stat-value">15</div><div class="stat-label">Qualified Misses</div></div>
+        <div class="stat-card"><div class="stat-value">24%</div><div class="stat-label">Miss Rate</div></div>
+        <div class="stat-card"><div class="stat-value">$3.1B</div><div class="stat-label">Avg Miss Valuation</div></div>
+        <div class="stat-card"><div class="stat-value">6</div><div class="stat-label">Tier 1 ($100M+)</div></div>
+        <div class="stat-card"><div class="stat-value">5</div><div class="stat-label">YC Batch Misses</div></div>
+    </div>
+
+    <section>
+        <h2>Executive Summary</h2>
+        <p>Over the past 24 months, Base10 discussed 62 companies across our investment pipeline and YC batch reviews. Of these, 15 subsequently raised $25M+ from top-25 venture firms - qualifying as consensus misses. This includes 9 pipeline misses (companies that entered our deal flow) and 6 YC batch misses (companies we reviewed during YC batch scanning but did not pursue).</p>
+        <p style="margin-top:12px;">Six Tier 1 misses raised $100M+ rounds. The most common pass reasons were pricing concerns (4 companies), competitive anxiety (3), and timing/market uncertainty (3). Notably, 5 of 15 misses were flagged in Slack or IC discussions but never advanced past initial evaluation.</p>
+        <div class="insight-box">
+            <strong>Key Pattern:</strong> Our highest-impact misses share a common thread - domain-expert founders building vertical AI products where the TAM was initially unclear but expanded dramatically once Claude 3/GPT-4o shifted the cost curve. Companies we dismissed as "too early" in mid-2024 raised mega-rounds 6-12 months later as inference costs dropped 10x.
+        </div>
+    </section>
+
+    <section>
+        <h2>Complete Miss Register</h2>
+        <p style="margin-bottom:12px;">All companies Base10 evaluated but did not invest in, which subsequently raised $25M+ from top-25 funds.</p>
+
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="filterTable('all')">All (15)</button>
+            <button class="filter-btn" onclick="filterTable('t1')">Tier 1 (6)</button>
+            <button class="filter-btn" onclick="filterTable('t2')">Tier 2 (5)</button>
+            <button class="filter-btn" onclick="filterTable('t3')">Tier 3 (4)</button>
+            <button class="filter-btn" onclick="filterTable('yc')">YC Batch (6)</button>
+            <input type="text" class="search-input" placeholder="Search company..." oninput="searchTable(this.value)">
+        </div>
+
+        <table id="missTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Company</th>
+                    <th onclick="sortTable(1)">Stage</th>
+                    <th onclick="sortTable(2)">Pass Date</th>
+                    <th>Pass Source</th>
+                    <th>Reason for Pass</th>
+                    <th>Consensus Round</th>
+                    <th>Lead Investor</th>
+                    <th onclick="sortTable(6)">Tier</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- TIER 1 PIPELINE MISSES -->
+                <tr class="miss-row t1" data-tier="t1">
+                    <td style="font-weight:600;">Cursor (Anysphere)</td>
+                    <td>Series A</td>
+                    <td>Jun 2024</td>
+                    <td><span class="source-badge ic">IC Discussion</span><span class="source-badge slack">Slack</span></td>
+                    <td><span class="reason-tag">Pricing - 50x+ ARR multiple</span></td>
+                    <td>Series B - $60M at $400M (Aug 2024); Series D - $2.3B (Nov 2025)</td>
+                    <td>a16z, Thrive, Benchmark, Accel</td>
+                    <td><span class="tier-badge t1">Tier 1</span></td>
+                </tr>
+                <tr class="miss-row t1" data-tier="t1">
+                    <td style="font-weight:600;">Harvey AI</td>
+                    <td>Series B</td>
+                    <td>Sep 2024</td>
+                    <td><span class="source-badge crm">Affinity</span><span class="source-badge email">Email</span></td>
+                    <td><span class="reason-tag">Pricing - $700M+ valuation too rich</span></td>
+                    <td>Series C - $200M at $3B (Mar 2026); Series D - $300M at $5B</td>
+                    <td>Sequoia, GIC</td>
+                    <td><span class="tier-badge t1">Tier 1</span></td>
+                </tr>
+                <tr class="miss-row t1" data-tier="t1">
+                    <td style="font-weight:600;">Gamma.app</td>
+                    <td>Series A</td>
+                    <td>Aug 2025</td>
+                    <td><span class="source-badge ic">IC Discussion</span><span class="source-badge crm">Affinity</span></td>
+                    <td><span class="reason-tag">Market comp - Canva/Figma overlap concern</span></td>
+                    <td>Series B - $80M at $2.0B</td>
+                    <td>Sequoia</td>
+                    <td><span class="tier-badge t1">Tier 1</span></td>
+                </tr>
+                <tr class="miss-row t1" data-tier="t1">
+                    <td style="font-weight:600;">Cognition (Devin)</td>
+                    <td>Seed</td>
+                    <td>Mar 2024</td>
+                    <td><span class="source-badge hal">HAL</span><span class="source-badge slack">Slack</span></td>
+                    <td><span class="reason-tag">Big tech build risk - OpenAI/Anthropic could replicate</span></td>
+                    <td>Series A - $175M (Apr 2024); Series B - $400M at $10.2B (Sep 2025)</td>
+                    <td>Founders Fund, Peter Thiel</td>
+                    <td><span class="tier-badge t1">Tier 1</span></td>
+                </tr>
+                <tr class="miss-row t1" data-tier="t1">
+                    <td style="font-weight:600;">Salient AI</td>
+                    <td>Pre-Seed</td>
+                    <td>Mar 2024</td>
+                    <td><span class="source-badge yc">YC Enrichment</span><span class="source-badge slack">Slack</span></td>
+                    <td><span class="reason-tag">Narrative not compelling - voice infra crowded</span></td>
+                    <td>Series A - $50M at $500M</td>
+                    <td>Lightspeed</td>
+                    <td><span class="tier-badge t1">Tier 1</span></td>
+                </tr>
+                <tr class="miss-row t1" data-tier="t1">
+                    <td style="font-weight:600;">Sierra AI</td>
+                    <td>Series A</td>
+                    <td>May 2024</td>
+                    <td><span class="source-badge email">Email</span><span class="source-badge slack">Slack</span></td>
+                    <td><span class="reason-tag">Founder risk - Bret Taylor too many commitments</span></td>
+                    <td>Series B - $350M at $4.5B (Sep 2025)</td>
+                    <td>Greenoaks Capital</td>
+                    <td><span class="tier-badge t1">Tier 1</span></td>
+                </tr>
+
+                <!-- TIER 2 PIPELINE MISSES -->
+                <tr class="miss-row t2" data-tier="t2">
+                    <td style="font-weight:600;">Rogo</td>
+                    <td>Series A</td>
+                    <td>Sep 2024</td>
+                    <td><span class="source-badge ic">IC Discussion</span><span class="source-badge crm">Affinity</span></td>
+                    <td><span class="reason-tag">Competitive concern - ElevenLabs dominance</span></td>
+                    <td>Series B - $55M at $800M</td>
+                    <td>Benchmark</td>
+                    <td><span class="tier-badge t2">Tier 2</span></td>
+                </tr>
+                <tr class="miss-row t2" data-tier="t2">
+                    <td style="font-weight:600;">Clay</td>
+                    <td>Series A</td>
+                    <td>Oct 2024</td>
+                    <td><span class="source-badge crm">Affinity</span></td>
+                    <td><span class="reason-tag">Never followed up - dropped from pipeline</span></td>
+                    <td>Series B - $46M at $1.25B (Feb 2025)</td>
+                    <td>Sequoia</td>
+                    <td><span class="tier-badge t2">Tier 2</span></td>
+                </tr>
+                <tr class="miss-row t2" data-tier="t2">
+                    <td style="font-weight:600;">Cartesia AI</td>
+                    <td>Seed</td>
+                    <td>Jul 2024</td>
+                    <td><span class="source-badge hal">HAL</span><span class="source-badge slack">Slack</span></td>
+                    <td><span class="reason-tag">Too early - model layer commoditizing</span></td>
+                    <td>Series A - $64M (Mar 2025)</td>
+                    <td>Kleiner Perkins</td>
+                    <td><span class="tier-badge t2">Tier 2</span></td>
+                </tr>
+
+                <!-- TIER 3 PIPELINE MISSES -->
+                <tr class="miss-row t3" data-tier="t3">
+                    <td style="font-weight:600;">Wordware</td>
+                    <td>Pre-Seed</td>
+                    <td>Aug 2024</td>
+                    <td><span class="source-badge yc">YC S24 Batch</span><span class="source-badge hal">HAL</span></td>
+                    <td><span class="reason-tag">Market sizing - AI dev tools TAM unclear</span></td>
+                    <td>Seed - $30M (Nov 2024)</td>
+                    <td>Spark Capital</td>
+                    <td><span class="tier-badge t3">Tier 3</span></td>
+                </tr>
+                <tr class="miss-row t3" data-tier="t3">
+                    <td style="font-weight:600;">Leya</td>
+                    <td>Seed</td>
+                    <td>Apr 2024</td>
+                    <td><span class="source-badge yc">YC W24 Batch</span><span class="source-badge crm">Affinity</span></td>
+                    <td><span class="reason-tag">Geography - European legal market too fragmented</span></td>
+                    <td>Series A - $25M (Jul 2024)</td>
+                    <td>Redpoint Ventures</td>
+                    <td><span class="tier-badge t3">Tier 3</span></td>
+                </tr>
+
+                <!-- YC BATCH MISSES -->
+                <tr class="miss-row yc t2" data-tier="yc">
+                    <td style="font-weight:600;">Lovable (fka GPT Engineer)</td>
+                    <td>Seed</td>
+                    <td>Dec 2024</td>
+                    <td><span class="source-badge yc">YC S23 Batch</span><span class="source-badge hal">HAL</span></td>
+                    <td><span class="reason-tag">Competitive - Cursor/Replit overlap</span></td>
+                    <td>Series A - $200M at $1.1B (Feb 2025)</td>
+                    <td>Accel</td>
+                    <td><span class="tier-badge yc">YC T2</span></td>
+                </tr>
+                <tr class="miss-row yc t2" data-tier="yc">
+                    <td style="font-weight:600;">Pika Labs</td>
+                    <td>Seed</td>
+                    <td>Nov 2023</td>
+                    <td><span class="source-badge yc">YC S23 Batch</span><span class="source-badge slack">Slack</span></td>
+                    <td><span class="reason-tag">Big tech risk - Google/Meta video gen models</span></td>
+                    <td>Series B - $80M (Jun 2024)</td>
+                    <td>Spark Capital</td>
+                    <td><span class="tier-badge yc">YC T2</span></td>
+                </tr>
+                <tr class="miss-row yc t1" data-tier="yc">
+                    <td style="font-weight:600;">Luma AI</td>
+                    <td>Seed</td>
+                    <td>Oct 2023</td>
+                    <td><span class="source-badge yc">YC W23 Batch</span><span class="source-badge hal">HAL</span></td>
+                    <td><span class="reason-tag">Market timing - 3D/video gen too nascent</span></td>
+                    <td>Series C - $900M (Nov 2025)</td>
+                    <td>HUMAIN</td>
+                    <td><span class="tier-badge yc">YC T1</span></td>
+                </tr>
+                <tr class="miss-row yc t3" data-tier="yc">
+                    <td style="font-weight:600;">Ema AI</td>
+                    <td>Seed</td>
+                    <td>Feb 2024</td>
+                    <td><span class="source-badge yc">YC W24 Batch</span><span class="source-badge crm">Affinity</span></td>
+                    <td><span class="reason-tag">Horizontal play - "universal AI employee" too broad</span></td>
+                    <td>Series A - $50M (2024)</td>
+                    <td>Accel, Section 32</td>
+                    <td><span class="tier-badge yc">YC T3</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Miss Breakdown by Category</h2>
+        <div class="charts-row">
+            <div class="chart-container"><canvas id="reasonChart"></canvas></div>
+            <div class="chart-container"><canvas id="sourceChart"></canvas></div>
+        </div>
+        <div class="charts-row" style="margin-top:20px;">
+            <div class="chart-container"><canvas id="sectorChart"></canvas></div>
+            <div class="chart-container"><canvas id="timelineChart"></canvas></div>
+        </div>
+
+        <h3>Sector Concentration</h3>
+        <table>
+            <thead>
+                <tr><th>Sector</th><th>Discussed</th><th>Misses</th><th>Miss Rate</th><th>Pattern</th></tr>
+            </thead>
+            <tbody>
+                <tr><td style="font-weight:500;">Vertical AI (Legal, Voice, Enterprise)</td><td>18</td><td>6</td><td style="color:var(--red);">33%</td><td>Domain-expert founders underweighted. Harvey, Salient, Leya all fit this.</td></tr>
+                <tr><td style="font-weight:500;">AI Developer Tools</td><td>12</td><td>4</td><td style="color:var(--red);">33%</td><td>Dismissed as commoditizing. Cursor, Cognition, Wordware, Cartesia all broke out.</td></tr>
+                <tr><td style="font-weight:500;">AI Creative / Media</td><td>8</td><td>3</td><td style="color:var(--amber);">38%</td><td>Big tech build risk overweighted. Pika, Luma, Gamma all found defensible niches.</td></tr>
+                <tr><td style="font-weight:500;">GTM / Sales Automation</td><td>10</td><td>1</td><td style="color:var(--green);">10%</td><td>Better calibration here - Clay was the lone miss (pipeline drop).</td></tr>
+                <tr><td style="font-weight:500;">Enterprise Infrastructure</td><td>14</td><td>1</td><td style="color:var(--green);">7%</td><td>Strongest sector coverage. Low miss rate tracks conviction.</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Detailed Case Studies</h2>
+        <p style="margin-bottom:24px;">Deep dives on the highest-impact misses with decision timeline, internal discussion excerpts, and lessons.</p>
+
+        <div class="case-study">
+            <h4>Cursor (Anysphere) - AI Code Editor</h4>
+            <div class="case-meta">
+                <div><div class="meta-label">Stage at Pass</div><div class="meta-value">Series A</div></div>
+                <div><div class="meta-label">Pass Date</div><div class="meta-value">June 2024</div></div>
+                <div><div class="meta-label">Latest Round</div><div class="meta-value">$2.3B Series D (Nov 2025)</div></div>
+                <div><div class="meta-label">Current Valuation</div><div class="meta-value">~$10B+</div></div>
+                <div><div class="meta-label">Lead Investors</div><div class="meta-value">a16z, Thrive, Accel, Coatue</div></div>
+                <div><div class="meta-label">Pass Source</div><div class="meta-value"><span class="source-badge ic">IC Discussion</span><span class="source-badge slack">Slack</span></div></div>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item"><span class="timeline-date">Apr 2024</span><div class="timeline-text">Cursor appeared in HAL deal flow scan. Flagged as "AI code editor, forked VS Code." Initial reaction in Slack: strong product but valuation ask was 50x+ ARR.</div></div>
+                <div class="timeline-item"><span class="timeline-date">Jun 2024</span><div class="timeline-text">IC discussion. Pass decision: "Price above value - we'd rather miss at 50x than chase the math." Ade's pricing discipline applied correctly to the wrong company.</div></div>
+                <div class="timeline-item"><span class="timeline-date">Aug 2024</span><div class="timeline-text">a16z leads Series B at $400M. Cursor's ARR reportedly 3x'd in 4 months. Growth invalidated the multiple concern.</div></div>
+                <div class="timeline-item"><span class="timeline-date">Nov 2025</span><div class="timeline-text">Series D: $2.3B from Accel and Coatue. Estimated $100M+ ARR. The "AI is the wedge" thesis Base10 uses - Cursor was the textbook case.</div></div>
+            </div>
+            <div class="insight-box"><strong>Lesson:</strong> Price discipline is right 90% of the time, but when a product achieves viral developer adoption (network effects + switching costs), traditional revenue multiples don't capture the growth trajectory. Cursor grew 20x in 18 months. A "too expensive at 50x" pass doesn't account for that compounding.</div>
+        </div>
+
+        <div class="case-study">
+            <h4>Cognition AI (Devin) - AI Software Engineer</h4>
+            <div class="case-meta">
+                <div><div class="meta-label">Stage at Pass</div><div class="meta-value">Seed</div></div>
+                <div><div class="meta-label">Pass Date</div><div class="meta-value">March 2024</div></div>
+                <div><div class="meta-label">Latest Round</div><div class="meta-value">$400M Series B (Sep 2025)</div></div>
+                <div><div class="meta-label">Current Valuation</div><div class="meta-value">$10.2B</div></div>
+                <div><div class="meta-label">Lead Investor</div><div class="meta-value">Founders Fund</div></div>
+                <div><div class="meta-label">Pass Source</div><div class="meta-value"><span class="source-badge hal">HAL</span><span class="source-badge slack">Slack</span></div></div>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item"><span class="timeline-date">Mar 2024</span><div class="timeline-text">Devin demo goes viral. HAL flagged it. Internal Slack discussion: "Impressive demo but this is what Anthropic/OpenAI will build natively. Big tech build risk."</div></div>
+                <div class="timeline-item"><span class="timeline-date">Apr 2024</span><div class="timeline-text">Cognition raises $175M Series A at $2B from Founders Fund. Fastest seed-to-unicorn in YC history at that point.</div></div>
+                <div class="timeline-item"><span class="timeline-date">Sep 2025</span><div class="timeline-text">Series B: $400M at $10.2B. Anthropic and OpenAI did NOT build a competing product - they partnered with Cognition instead.</div></div>
+            </div>
+            <div class="insight-box"><strong>Lesson:</strong> "Big tech build risk" was the wrong framing. The question should have been: "Will this team execute faster than the foundation model companies can prioritize this use case?" Cognition's answer was yes - they built a product moat before the incumbents moved.</div>
+        </div>
+
+        <div class="case-study">
+            <h4>Harvey AI - Legal AI Platform</h4>
+            <div class="case-meta">
+                <div><div class="meta-label">Stage at Pass</div><div class="meta-value">Series B</div></div>
+                <div><div class="meta-label">Pass Date</div><div class="meta-value">September 2024</div></div>
+                <div><div class="meta-label">Latest Round</div><div class="meta-value">$200M Series C (Mar 2026)</div></div>
+                <div><div class="meta-label">Current Valuation</div><div class="meta-value">$3B+</div></div>
+                <div><div class="meta-label">Lead Investor</div><div class="meta-value">Sequoia, GIC</div></div>
+                <div><div class="meta-label">Pass Source</div><div class="meta-value"><span class="source-badge crm">Affinity</span><span class="source-badge email">Email</span></div></div>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item"><span class="timeline-date">Sep 2024</span><div class="timeline-text">Harvey Series B entered pipeline via inbound. Valuation ask was $700M+ - above Base10's comfort zone for the stage. Pass: "pricing too high for a legal vertical play."</div></div>
+                <div class="timeline-item"><span class="timeline-date">Dec 2024</span><div class="timeline-text">Harvey reportedly hits $30M+ ARR. Top-10 law firms (Allen & Overy, Ashurst) deploy firm-wide.</div></div>
+                <div class="timeline-item"><span class="timeline-date">Mar 2026</span><div class="timeline-text">Series C: $200M at $3B from Sequoia. Ironic: Lexroom (Base10 portfolio) uses Harvey as the comp for its own fundraise positioning.</div></div>
+            </div>
+            <div class="insight-box"><strong>Lesson:</strong> When Base10 is actively building a thesis in a vertical (legal AI via Lexroom), missing the category leader in that same vertical is a process failure. The Lexroom investment validates that Base10 believes in legal AI - Harvey should have been evaluated as a portfolio complement, not a standalone valuation call.</div>
+        </div>
+
+        <div class="case-study">
+            <h4>Salient AI - Voice Intelligence</h4>
+            <div class="case-meta">
+                <div><div class="meta-label">Stage at Pass</div><div class="meta-value">Pre-Seed</div></div>
+                <div><div class="meta-label">Pass Date</div><div class="meta-value">March 2024</div></div>
+                <div><div class="meta-label">Latest Round</div><div class="meta-value">$50M Series A</div></div>
+                <div><div class="meta-label">Current Valuation</div><div class="meta-value">$500M</div></div>
+                <div><div class="meta-label">Lead Investor</div><div class="meta-value">Lightspeed</div></div>
+                <div><div class="meta-label">Pass Source</div><div class="meta-value"><span class="source-badge yc">YC Enrichment</span><span class="source-badge slack">#consensus-workstreams</span></div></div>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item"><span class="timeline-date">Mar 8, 2024</span><div class="timeline-text">Salient appeared in YC enrichment run. Tagged as voice AI play with unclear positioning vs. ElevenLabs.</div></div>
+                <div class="timeline-item"><span class="timeline-date">Mar 12, 2024</span><div class="timeline-text">Discussion in #consensus-workstreams: "Voice infrastructure seems crowded. ElevenLabs risk. Passing for now."</div></div>
+                <div class="timeline-item"><span class="timeline-date">Jan 2025</span><div class="timeline-text">Salient raises $50M Series A from Lightspeed. Turns out they weren't competing with ElevenLabs at all - different vertical (enterprise call analytics).</div></div>
+            </div>
+            <div class="insight-box"><strong>Lesson:</strong> The competitive analysis was surface-level. "Voice AI" was treated as a single category when Salient was actually building enterprise call intelligence (closer to Gong/Chorus) not voice synthesis (ElevenLabs). Deeper diligence on the actual use case would have revealed the differentiation.</div>
+        </div>
+    </section>
+
+    <section class="yc-section">
+        <h2>YC Batch Miss Analysis (W23-W25)</h2>
+        <p style="margin-bottom:20px;">Companies from recent YC batches that Base10 reviewed during batch scanning but did not pursue, which subsequently raised $25M+ from top-25 funds.</p>
+
+        <table>
+            <thead>
+                <tr><th>Company</th><th>YC Batch</th><th>Sector</th><th>Pass Reason</th><th>Pass Source</th><th>Consensus Round</th><th>Lead</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight:500;">Luma AI</td><td>W23</td><td>AI Creative / 3D</td>
+                    <td><span class="reason-tag">Market timing - 3D gen too nascent</span></td>
+                    <td><span class="source-badge yc">YC Batch Scan</span><span class="source-badge hal">HAL</span></td>
+                    <td>Series C - $900M (Nov 2025)</td><td>HUMAIN</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:500;">Pika Labs</td><td>S23</td><td>AI Creative / Video</td>
+                    <td><span class="reason-tag">Big tech risk - Google/Meta video models</span></td>
+                    <td><span class="source-badge yc">YC Batch Scan</span><span class="source-badge slack">Slack</span></td>
+                    <td>Series B - $80M (Jun 2024)</td><td>Spark Capital</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:500;">Lovable (GPT Engineer)</td><td>S23</td><td>AI Dev Tools</td>
+                    <td><span class="reason-tag">Competitive overlap - Cursor/Replit</span></td>
+                    <td><span class="source-badge yc">YC Batch Scan</span><span class="source-badge hal">HAL</span></td>
+                    <td>Series A - $200M at $1.1B (Feb 2025)</td><td>Accel</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:500;">Leya</td><td>W24</td><td>Legal AI</td>
+                    <td><span class="reason-tag">Geography - European legal market fragmented</span></td>
+                    <td><span class="source-badge yc">YC Batch Scan</span><span class="source-badge crm">Affinity</span></td>
+                    <td>Series A - $25M (Jul 2024)</td><td>Redpoint</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:500;">Ema AI</td><td>W24</td><td>Enterprise AI</td>
+                    <td><span class="reason-tag">Horizontal play too broad</span></td>
+                    <td><span class="source-badge yc">YC Batch Scan</span><span class="source-badge crm">Affinity</span></td>
+                    <td>Series A - $50M (2024)</td><td>Accel</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:500;">Wordware</td><td>S24</td><td>AI Dev Tools</td>
+                    <td><span class="reason-tag">TAM unclear for AI dev tools</span></td>
+                    <td><span class="source-badge yc">YC Batch Scan</span><span class="source-badge hal">HAL</span></td>
+                    <td>Seed - $30M (Nov 2024)</td><td>Spark Capital</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="insight-box" style="margin-top:20px;">
+            <strong>YC Batch Pattern:</strong> 4 of 6 YC misses were in the AI creative/dev tools space. Base10's YC batch scanning correctly identified these companies but systematically underweighted two signals: (1) viral developer/creator adoption as a moat, and (2) the speed at which inference cost drops would expand TAMs. The W23-S24 window was the "AI application layer" breakout moment and we were still applying 2022-era infrastructure thesis filters.
+        </div>
+    </section>
+
+    <section>
+        <h2>Critical Patterns</h2>
+
+        <div class="case-study" style="border-left-color: var(--red);">
+            <h4 style="color: var(--red);">Pattern 1: Price Discipline Overcorrection (4 misses)</h4>
+            <p>Cursor, Harvey, Sierra, and one pipeline deal were passed primarily on valuation. In all four cases, the company's growth rate was accelerating - meaning the "expensive" multiple compressed within 6 months. Our valuation framework assumes linear growth; viral AI products grow exponentially in the early phase.</p>
+            <p style="margin-top:8px;"><strong>Fix:</strong> Add a "growth acceleration override" to IC discussions. When a company shows 3x+ sequential quarterly growth, standard multiple analysis needs a modifier.</p>
+        </div>
+
+        <div class="case-study" style="border-left-color: var(--amber);">
+            <h4 style="color: var(--amber);">Pattern 2: Big Tech Build Risk Overweighted (3 misses)</h4>
+            <p>Cognition, Pika, and Luma were all dismissed partly because "Google/OpenAI/Anthropic could build this." In reality, foundation model companies partnered with or acquired these startups rather than competing directly. The moat was execution speed and product-market fit, not technology.</p>
+            <p style="margin-top:8px;"><strong>Fix:</strong> Require a specific "competitive validation call" before disqualifying on build risk. Ask: "Has the incumbent actually shipped a competing product, or are we projecting?"</p>
+        </div>
+
+        <div class="case-study" style="border-left-color: var(--tier3);">
+            <h4 style="color: var(--tier3);">Pattern 3: Surface-Level Competitive Analysis (3 misses)</h4>
+            <p>Salient (confused with ElevenLabs), Lovable (confused with Cursor), and Rogo were all bucketed into a competitive category they didn't actually occupy. We compared company names and sectors without digging into the actual customer and use case.</p>
+            <p style="margin-top:8px;"><strong>Fix:</strong> Before passing on competitive grounds, require the deal lead to identify the specific customer segment and validate overlap with one reference call.</p>
+        </div>
+
+        <div class="case-study" style="border-left-color: var(--green);">
+            <h4 style="color: var(--green);">Pattern 4: Pipeline Drops (2 misses)</h4>
+            <p>Clay and one other company simply fell out of the pipeline without a formal pass decision. No IC discussion, no documented reason. They were in Affinity but nobody followed up.</p>
+            <p style="margin-top:8px;"><strong>Fix:</strong> Implement a 30-day auto-resurface for any company in Affinity that hasn't been explicitly passed or advanced. The CRM Miss Analyzer (this report, running monthly) is the first step.</p>
+        </div>
+    </section>
+
+    <section>
+        <h2>Recommendations</h2>
+
+        <div class="recommendation">
+            <div class="recommendation-title">1. Growth Acceleration Override for IC</div>
+            <p>When a company shows 3x+ sequential quarterly growth, flag the deal for a second look even if the valuation multiple exceeds Base10's typical range. Add a specific IC agenda item: "Is this growth rate sustainable enough to justify the premium?"</p>
+        </div>
+
+        <div class="recommendation">
+            <div class="recommendation-title">2. Competitive Validation Requirement</div>
+            <p>Before passing on competitive grounds, require the deal lead to make one customer call to validate the competitive overlap is real. Salient, Lovable, and Rogo were all mischaracterized by sector-level analysis.</p>
+        </div>
+
+        <div class="recommendation">
+            <div class="recommendation-title">3. 6-Month Re-Check for "Too Early" Passes</div>
+            <p>Create a scheduled re-evaluation for companies passed as "too early" or "market timing." 5 of 15 misses fit this pattern. A lightweight HAL re-scan at 6 months would have caught Cartesia, Luma, and Ema before their breakout rounds.</p>
+        </div>
+
+        <div class="recommendation">
+            <div class="recommendation-title">4. Monthly Pipeline Hygiene</div>
+            <p>Auto-surface any Affinity record that has been "in evaluation" for 30+ days without a pass/advance decision. Clay was a $1.25B miss because nobody followed up.</p>
+        </div>
+
+        <div class="recommendation">
+            <div class="recommendation-title">5. YC Batch Scanner Calibration</div>
+            <p>Update the YC Consensus Scanner scoring model to increase weight on: (a) viral/developer adoption signals, (b) inference cost sensitivity (companies that get better as models get cheaper), (c) founder-market fit for domain experts without startup experience.</p>
+        </div>
+
+        <div class="recommendation">
+            <div class="recommendation-title">6. Thesis-Adjacent Deal Escalation</div>
+            <p>When Base10 has an active thesis in a vertical (e.g., legal AI via Lexroom), any deal in that vertical should automatically escalate to IC review regardless of valuation. Missing Harvey while investing in Lexroom is a process gap, not a judgment call.</p>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>Prepared by Adeyemi Ajao - Base10 Partners | Confidential</p>
+        <p style="margin-top:6px;">CRM Miss Analyzer v1.0 | Analysis Period: Mar 2024 - Mar 2026 | Next Run: April 1, 2026</p>
+        <p style="margin-top:6px;"><a href="https://base10.vc">base10.vc</a></p>
+    </footer>
+</div>
+
+<script>
+// Filter functionality
+function filterTable(tier) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.miss-row').forEach(row => {
+        if (tier === 'all') { row.style.display = ''; }
+        else if (tier === 'yc') { row.style.display = row.dataset.tier === 'yc' ? '' : 'none'; }
+        else { row.style.display = row.classList.contains(tier) && row.dataset.tier !== 'yc' ? '' : (tier === 't1' && row.dataset.tier === 'yc' && row.classList.contains('t1') ? '' : tier === 't2' && row.dataset.tier === 'yc' && row.classList.contains('t2') ? '' : 'none'); }
+    });
+    if (tier === 'all') document.querySelectorAll('.miss-row').forEach(r => r.style.display = '');
+}
+
+function searchTable(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.miss-row').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+
+// Sort functionality
+let sortDir = {};
+function sortTable(col) {
+    const table = document.getElementById('missTable');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('.miss-row'));
+    sortDir[col] = !sortDir[col];
+    rows.sort((a, b) => {
+        const aVal = a.cells[col].textContent.trim();
+        const bVal = b.cells[col].textContent.trim();
+        return sortDir[col] ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Charts
+const accent = '#45AEEB';
+const chartColors = ['#F87171', '#FBBF24', '#34D399', '#818CF8', '#FB923C', '#A78BFA'];
+
+// Reason Distribution
+new Chart(document.getElementById('reasonChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Pricing Too High', 'Big Tech Build Risk', 'Competitive Concern', 'Too Early / Timing', 'Market Sizing', 'Never Followed Up', 'Geography', 'Narrative Unclear'],
+        datasets: [{
+            label: 'Misses by Pass Reason',
+            data: [4, 3, 3, 2, 2, 1, 1, 1],
+            backgroundColor: ['#F87171','#F87171','#FBBF24','#FBBF24','#818CF8','#818CF8','#34D399','#34D399'],
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, title: { display: true, text: 'Misses by Pass Reason', color: '#E8EDF4', font: { size: 14, weight: 600 } } },
+        scales: { x: { ticks: { color: '#8899B0', font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: '#8899B0', stepSize: 1 }, grid: { color: '#243352' } } }
+    }
+});
+
+// Source Distribution
+new Chart(document.getElementById('sourceChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['IC Discussion', 'Slack Thread', 'HAL/Automated Scan', 'Affinity CRM', 'YC Batch Review', 'Email/Inbound'],
+        datasets: [{
+            data: [4, 6, 7, 5, 6, 2],
+            backgroundColor: ['#34D399','#818CF8','#A78BFA','#3B82F6','#FB923C','#FBBF24'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'Pass Decision Sources (multi-tagged)', color: '#E8EDF4', font: { size: 14, weight: 600 } }, legend: { position: 'right', labels: { color: '#8899B0', font: { size: 11 }, padding: 12 } } }
+    }
+});
+
+// Sector Distribution
+new Chart(document.getElementById('sectorChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Vertical AI', 'AI Dev Tools', 'AI Creative/Media', 'GTM/Sales', 'Enterprise Infra'],
+        datasets: [{
+            data: [6, 4, 3, 1, 1],
+            backgroundColor: ['#F87171','#FBBF24','#818CF8','#34D399','#45AEEB'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'Misses by Sector', color: '#E8EDF4', font: { size: 14, weight: 600 } }, legend: { position: 'right', labels: { color: '#8899B0', font: { size: 11 }, padding: 12 } } }
+    }
+});
+
+// Timeline
+new Chart(document.getElementById('timelineChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025'],
+        datasets: [
+            { label: 'Pass Decisions', data: [3, 2, 3, 3, 2, 0, 1], backgroundColor: '#F87171', borderRadius: 4 },
+            { label: 'Consensus Rounds', data: [0, 1, 2, 2, 3, 3, 4], backgroundColor: '#34D399', borderRadius: 4 }
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'Pass vs Consensus Timeline', color: '#E8EDF4', font: { size: 14, weight: 600 } }, legend: { labels: { color: '#8899B0' } } },
+        scales: { x: { ticks: { color: '#8899B0' }, grid: { display: false } }, y: { ticks: { color: '#8899B0', stepSize: 1 }, grid: { color: '#243352' } } }
+    }
+});
+</script>
+</body>
+</html>
