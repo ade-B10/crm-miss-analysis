@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JustAI Miss Risk Assessment - Base10 CRM Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --bg: #0C1220;
+            --surface: #131D2E;
+            --surface-2: #1A2740;
+            --border: #243352;
+            --text: #E8EDF4;
+            --text-dim: #8899B0;
+            --text-muted: #5A6E88;
+            --accent: #45AEEB;
+            --accent-hover: #26A6ED;
+            --green: #34D399;
+            --amber: #FBBF24;
+            --red: #F87171;
+            --tier1: #DC2626;
+            --tier2: #F59E0B;
+            --tier3: #3B82F6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+
+        header { text-align: center; margin-bottom: 50px; border-bottom: 2px solid var(--accent); padding-bottom: 30px; }
+        .logo { display: inline-block; background: linear-gradient(135deg, var(--accent), #2563EB); padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.9em; margin-bottom: 20px; letter-spacing: 1px; }
+        header h1 { font-size: 2.4em; margin-bottom: 10px; color: var(--accent); font-weight: 800; letter-spacing: -1px; }
+        header p { font-size: 1.05em; color: var(--text-dim); margin-bottom: 5px; }
+        .report-date { color: var(--text-muted); font-size: 0.9em; margin-top: 12px; }
+
+        .verdict-box { background: linear-gradient(135deg, rgba(220,38,38,0.15), rgba(245,158,11,0.1)); border: 2px solid var(--red); border-radius: 12px; padding: 32px; margin-bottom: 50px; text-align: center; }
+        .verdict-label { font-size: 0.8em; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 8px; }
+        .verdict-score { font-size: 3.5em; font-weight: 800; color: var(--red); margin-bottom: 4px; }
+        .verdict-text { font-size: 1.3em; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+        .verdict-sub { font-size: 0.95em; color: var(--text-dim); max-width: 700px; margin: 0 auto; line-height: 1.7; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 50px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 22px; border-radius: 8px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(69,174,235,0.1); }
+        .stat-card.green { border-left-color: var(--green); }
+        .stat-card.red { border-left-color: var(--red); }
+        .stat-card.amber { border-left-color: var(--amber); }
+        .stat-value { font-size: 2em; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .stat-card.green .stat-value { color: var(--green); }
+        .stat-card.red .stat-value { color: var(--red); }
+        .stat-card.amber .stat-value { color: var(--amber); }
+        .stat-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+
+        section { margin-bottom: 60px; }
+        h2 { font-size: 1.6em; color: var(--accent); margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 12px; font-weight: 700; }
+        h3 { font-size: 1.2em; color: var(--text); margin: 25px 0 12px; font-weight: 600; }
+        h4 { font-size: 1.05em; color: var(--accent); margin: 20px 0 10px; font-weight: 600; }
+
+        p { margin-bottom: 14px; color: var(--text-dim); line-height: 1.75; }
+        p.highlight { color: var(--text); }
+
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); font-size: 0.88em; }
+        table th { background: var(--surface-2); color: var(--accent); padding: 14px 12px; text-align: left; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--accent); }
+        table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        table tr:last-child td { border-bottom: none; }
+        table tr:hover { background: var(--surface-2); }
+
+        .signal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        @media (max-width: 768px) { .signal-grid { grid-template-columns: 1fr; } }
+        .signal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+        .signal-card.positive { border-left: 4px solid var(--green); }
+        .signal-card.negative { border-left: 4px solid var(--red); }
+        .signal-card.mixed { border-left: 4px solid var(--amber); }
+        .signal-card h4 { margin-top: 0; }
+
+        .pattern-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin: 16px 0; }
+        .pattern-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .pattern-match { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pattern-match.high { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+        .pattern-match.medium { background: rgba(245,158,11,0.2); color: #FED7AA; }
+        .pattern-match.low { background: rgba(34,211,153,0.2); color: #A7F3D0; }
+
+        .quote-block { background: var(--surface-2); border-left: 3px solid var(--accent); padding: 16px 20px; margin: 14px 0; border-radius: 0 8px 8px 0; font-style: italic; color: var(--text-dim); }
+        .quote-attr { font-style: normal; font-size: 0.85em; color: var(--text-muted); margin-top: 6px; }
+
+        .tier-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+        .tier-badge.t1 { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+        .tier-badge.t2 { background: rgba(245,158,11,0.2); color: #FED7AA; }
+        .tier-badge.consensus { background: rgba(69,174,235,0.2); color: var(--accent); }
+
+        .chart-container { position: relative; height: 350px; margin: 20px 0; background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+
+        .rec-box { background: linear-gradient(135deg, rgba(69,174,235,0.1), rgba(37,99,235,0.05)); border: 1px solid var(--accent); border-radius: 12px; padding: 28px; margin: 20px 0; }
+        .rec-box h4 { color: var(--accent); margin-top: 0; }
+
+        .timeline { margin: 16px 0; padding-left: 18px; border-left: 2px solid var(--accent); }
+        .timeline-item { margin: 12px 0; padding-left: 16px; position: relative; }
+        .timeline-item::before { content: ''; position: absolute; left: -23px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+        .timeline-date { font-size: 0.8em; color: var(--text-muted); font-weight: 500; }
+        .timeline-text { color: var(--text-dim); font-size: 0.92em; margin-top: 3px; }
+
+        .firm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 16px 0; }
+        .firm-tag { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; }
+        .firm-tag .firm-name { font-weight: 600; color: var(--text); }
+        .firm-tag .firm-tier { font-size: 0.75em; color: var(--text-muted); }
+
+        .criteria-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+        @media (max-width: 768px) { .criteria-grid { grid-template-columns: 1fr; } }
+        .criteria-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+        .criteria-value { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .criteria-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+        .criteria-desc { font-size: 0.82em; color: var(--text-muted); margin-top: 8px; }
+
+        .confidence-meter { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+        .meter-bar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+        .meter-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .meter-fill.high { background: linear-gradient(90deg, var(--red), #EF4444); }
+        .meter-fill.medium { background: linear-gradient(90deg, var(--amber), #F59E0B); }
+        .meter-fill.low { background: linear-gradient(90deg, var(--green), #22C55E); }
+        .meter-label { font-size: 0.82em; color: var(--text-dim); min-width: 40px; text-align: right; }
+
+        .nav-link { display: inline-block; margin-bottom: 20px; color: var(--accent); text-decoration: none; font-size: 0.9em; }
+        .nav-link:hover { text-decoration: underline; }
+
+        footer { text-align: center; padding: 30px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.82em; margin-top: 40px; }
+
+        .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 40px; }
+        .toc-title { font-size: 0.8em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }
+        .toc a { display: block; color: var(--accent); text-decoration: none; padding: 5px 0; font-size: 0.92em; }
+        .toc a:hover { color: #fff; }
+
+        .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.78em; font-weight: 500; background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="nav-link">&larr; Back to CRM Miss Analysis Dashboard</a>
+
+    <header>
+        <div class="logo">BASE<sup>10</sup> PARTNERS</div>
+        <h1>JustAI: Miss Risk Assessment</h1>
+        <p>CRM Miss Pattern Analysis Applied to Active Deal</p>
+        <div class="report-date">Prepared March 31, 2026 &middot; Confidential &middot; Internal Use Only</div>
+    </header>
+
+    <div class="toc">
+        <div class="toc-title">Contents</div>
+        <a href="#verdict">1. Verdict: Miss Probability Score</a>
+        <a href="#company">2. Company Snapshot</a>
+        <a href="#definitions">3. What is Consensus? Definitions & Thresholds</a>
+        <a href="#top-firms">4. Top-30 Consensus Firms</a>
+        <a href="#assessment">5. Team Assessment: What We Got Right & What We're Missing</a>
+        <a href="#patterns">6. B10 Miss Patterns That Predict Consensus</a>
+        <a href="#justai-pattern-match">7. JustAI Pattern Match Scorecard</a>
+        <a href="#customer-evidence">8. Customer Evidence Deep Dive</a>
+        <a href="#timeline">9. Deal Timeline</a>
+        <a href="#recommendation">10. Investment Recommendation</a>
+    </div>
+
+    <!-- VERDICT -->
+    <section id="verdict">
+        <div class="verdict-box">
+            <div class="verdict-label">Miss Probability If Base10 Passes</div>
+            <div class="verdict-score">65%</div>
+            <div class="verdict-text">HIGH RISK OF BECOMING A TIER 1-2 MISS</div>
+            <div class="verdict-sub">JustAI matches 5 of 7 historical Base10 miss patterns. Customer evidence exceeds the internal bar set for conviction. The "fuzzy TAM / sucky category" framing echoes prior misses where static market sizing missed dynamic platform expansion stories.</div>
+        </div>
+    </section>
+
+    <!-- COMPANY SNAPSHOT -->
+    <section id="company">
+        <h2>Company Snapshot</h2>
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-value">$2.2M</div>
+                <div class="stat-label">Current ARR</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">120%</div>
+                <div class="stat-label">4-Mo Growth (from $1M)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">$100K</div>
+                <div class="stat-label">Average ACV</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">23</div>
+                <div class="stat-label">Active Logos</div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-value">$80-100M</div>
+                <div class="stat-label">Post-Money Ask</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">$10.5M</div>
+                <div class="stat-label">Pipeline (Mid-Late)</div>
+            </div>
+        </div>
+
+        <table>
+            <tr><th>Attribute</th><th>Detail</th></tr>
+            <tr><td>Category</td><td>AI-native lifecycle marketing automation (displacing Braze / Iterable / Customer.io)</td></tr>
+            <tr><td>Founder</td><td>Neha (CEO) - CMO of Roblox caliber network, strong enterprise credibility</td></tr>
+            <tr><td>Round</td><td>Series A: $15-20M at max 20% dilution ($80-100M post)</td></tr>
+            <tr><td>Deal Lead</td><td>Dani London (Base10)</td></tr>
+            <tr><td>Current Status</td><td>Ade asked for company brief + discussing with Rexhi. No formal pass yet.</td></tr>
+            <tr><td>Key Customers</td><td>Pinterest ($400K ACV), Etsy ($283K), ClickUp ($60K), Scribd ($60K), Notion, Better</td></tr>
+            <tr><td>Pipeline Target</td><td>$20M NTM (up from $2.5M current run rate)</td></tr>
+            <tr><td>GTM</td><td>100% founder-led sales (typical at this stage)</td></tr>
+        </table>
+    </section>
+
+    <!-- DEFINITIONS -->
+    <section id="definitions">
+        <h2>What Is Consensus? Definitions & Thresholds</h2>
+        <p class="highlight">The CRM Miss Analyzer uses a specific, measurable definition of "consensus" to identify deals Base10 evaluated but did not invest in that later became breakout companies. Here are the three core criteria:</p>
+
+        <div class="criteria-grid">
+            <div class="criteria-card">
+                <div class="criteria-value">$25M+</div>
+                <div class="criteria-label">Minimum Round Size</div>
+                <div class="criteria-desc">The company must have raised a subsequent round of $25M or more. This filters out companies that merely survived and isolates those that attracted significant capital conviction.</div>
+            </div>
+            <div class="criteria-card">
+                <div class="criteria-value">Top 30</div>
+                <div class="criteria-label">Lead Investor Tier</div>
+                <div class="criteria-desc">The round must have been led by a top-30 venture firm (see firm list below). This ensures the company didn't just raise from anyone - it attracted the most competitive, signal-heavy capital.</div>
+            </div>
+            <div class="criteria-card">
+                <div class="criteria-value">Series A+</div>
+                <div class="criteria-label">Minimum Stage</div>
+                <div class="criteria-desc">The round must be Series A or later, confirming the company achieved sufficient product-market fit and traction to clear institutional underwriting bars.</div>
+            </div>
+        </div>
+
+        <h3>Miss Tier Classification</h3>
+        <table>
+            <tr>
+                <th>Tier</th>
+                <th>Subsequent Round</th>
+                <th>Lead Investor</th>
+                <th>Signals</th>
+                <th>Severity</th>
+            </tr>
+            <tr>
+                <td><span class="tier-badge t1">Tier 1</span></td>
+                <td>$100M+</td>
+                <td>Top-5 firm (a16z, Sequoia, Benchmark, Founders Fund, Thrive)</td>
+                <td>Clear PMF, breakout growth, category-defining</td>
+                <td style="color: var(--red); font-weight: 600;">Critical miss - would have returned the fund</td>
+            </tr>
+            <tr>
+                <td><span class="tier-badge t2">Tier 2</span></td>
+                <td>$50-100M</td>
+                <td>Top-25 firm</td>
+                <td>Strong metrics, high growth, clear narrative</td>
+                <td style="color: var(--amber); font-weight: 600;">Significant miss - high-multiple outcome</td>
+            </tr>
+            <tr>
+                <td><span class="tier-badge" style="background: rgba(59,130,246,0.2); color: #93C5FD;">Tier 3</span></td>
+                <td>$25-50M</td>
+                <td>Top-50 firm</td>
+                <td>Solid traction, institutional validation</td>
+                <td style="color: var(--text-dim);">Notable miss - good but not category-defining</td>
+            </tr>
+        </table>
+
+        <h3>Why This Definition Matters</h3>
+        <p>The threshold is intentionally conservative. We only count a miss if: (1) Base10 had a documented discussion, (2) there was an explicit pass or deprioritization decision, (3) the subsequent round was $25M+ from a top-30 firm, and (4) the timing confirms we could have invested at the point of discussion. This avoids inflating the miss count with companies we never seriously evaluated or that raised from non-signal investors.</p>
+        <p>The goal is learning, not blame. The question is always: "what market signal did we misread?" not "who made a bad call." By holding to a $25M+ / top-30 firm bar, we ensure every identified miss represents a genuine blind spot worth analyzing.</p>
+    </section>
+
+    <!-- TOP FIRMS -->
+    <section id="top-firms">
+        <h2>Top-30 Consensus Firms</h2>
+        <p>These are the firms whose participation as lead investor in a subsequent round triggers a "consensus" classification in the CRM miss analysis. The list is calibrated based on AUM, deal velocity, signal quality, and historical ability to identify breakout companies.</p>
+
+        <h3>Tier 0: Mega-Signal (Top 5)</h3>
+        <p>A lead from any of these firms virtually guarantees consensus status and typically precedes a $1B+ outcome.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Andreessen Horowitz</span><span class="firm-tier">a16z</span></div>
+            <div class="firm-tag"><span class="firm-name">Sequoia Capital</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Benchmark</span><span class="firm-tier">Early stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Founders Fund</span><span class="firm-tier">Contrarian</span></div>
+            <div class="firm-tag"><span class="firm-name">Thrive Capital</span><span class="firm-tier">Growth</span></div>
+        </div>
+
+        <h3>Tier 1: High Signal (6-15)</h3>
+        <p>Firms with multi-billion funds, strong brand, and pattern recognition. A lead here strongly signals consensus.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Lightspeed Venture</span><span class="firm-tier">LSVP</span></div>
+            <div class="firm-tag"><span class="firm-name">General Catalyst</span><span class="firm-tier">GC</span></div>
+            <div class="firm-tag"><span class="firm-name">Accel</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">ICONIQ Growth</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Addition</span><span class="firm-tier">Lee Fixel</span></div>
+            <div class="firm-tag"><span class="firm-name">Greenoaks Capital</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Kleiner Perkins</span><span class="firm-tier">KP</span></div>
+            <div class="firm-tag"><span class="firm-name">Redpoint Ventures</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">IVP</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Greylock Partners</span><span class="firm-tier">Enterprise</span></div>
+        </div>
+
+        <h3>Tier 2: Strong Signal (16-30)</h3>
+        <p>Established firms that compete for top deals. A lead here qualifies as consensus at $50M+ round sizes.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Bessemer Venture</span><span class="firm-tier">Cloud</span></div>
+            <div class="firm-tag"><span class="firm-name">Insight Partners</span><span class="firm-tier">ScaleUp</span></div>
+            <div class="firm-tag"><span class="firm-name">NEA</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Spark Capital</span><span class="firm-tier">Early/Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Index Ventures</span><span class="firm-tier">EU/US</span></div>
+            <div class="firm-tag"><span class="firm-name">Khosla Ventures</span><span class="firm-tier">Deep tech</span></div>
+            <div class="firm-tag"><span class="firm-name">Battery Ventures</span><span class="firm-tier">Software</span></div>
+            <div class="firm-tag"><span class="firm-name">GV (Google)</span><span class="firm-tier">Strategic</span></div>
+            <div class="firm-tag"><span class="firm-name">Meritech Capital</span><span class="firm-tier">Crossover</span></div>
+            <div class="firm-tag"><span class="firm-name">Felicis Ventures</span><span class="firm-tier">Early stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Avenir Growth</span><span class="firm-tier">Jared Weinstein</span></div>
+            <div class="firm-tag"><span class="firm-name">Notable Capital</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Initialized Capital</span><span class="firm-tier">Seed/A</span></div>
+            <div class="firm-tag"><span class="firm-name">Madrona Ventures</span><span class="firm-tier">AI/Cloud</span></div>
+            <div class="firm-tag"><span class="firm-name">Menlo Ventures</span><span class="firm-tier">AI focus</span></div>
+        </div>
+
+        <div class="quote-block" style="margin-top: 20px;">
+            "We should have a view on each partner and their sensibility. I would put Roy [Iconiq] as 'not 100% consensus' whereas Pat Grady [Sequoia], Miles at Accel, Thrive etc are 100% consensus right now."
+            <div class="quote-attr">- Rexhi Dollaku, #consensus-workstreams, March 26, 2026</div>
+        </div>
+    </section>
+
+    <!-- TEAM ASSESSMENT -->
+    <section id="assessment">
+        <h2>Team Assessment: What We Got Right & What We're Missing</h2>
+
+        <div class="signal-grid">
+            <div class="signal-card positive">
+                <h4 style="color: var(--green);">What the Team Got Right</h4>
+                <p><strong>Dani's diligence was excellent.</strong> 4+ customer calls (Scribd, ClickUp, Notion, Better) with consistent 9-10/10 NPS. Hard ROI data collected: 50-70% DAU improvement at ClickUp, 129% KPI increase at Better, 300 campaign segments vs. 5-7 pre-JustAI.</p>
+                <p><strong>Market mapping was thorough.</strong> CEP comps analyzed (Braze, Iterable, Customer.io), correctly identified as slow-moving incumbents with basic AI features. Data room deep-dive covered ARR trajectory, customer concentration, pipeline quality.</p>
+                <p><strong>Rexhi's skeptical pushback was valuable.</strong> Pressure-testing whether "happy customers paying $60k while spending millions on Iterable" actually indicates a big category was the right question to ask.</p>
+            </div>
+            <div class="signal-card negative">
+                <h4 style="color: var(--red);">What the Team Is Missing</h4>
+                <p><strong>Static TAM framing.</strong> $600-800M estimate assumes current ACVs ($100K) against 6-8K customers. Ignores the platform expansion: if JustAI starts replacing Braze/Iterable functionality (which customers are independently requesting), ACVs expand 5-8x. ClickUp alone spends $500K on Iterable.</p>
+                <p><strong>Evidence/conclusion disconnect.</strong> The bar was set: "we need to hear directly from customers that this is an absolute, no-brainer step change." Customers said exactly that (4/4, with investment offers). Then conclusion shifted to "category is fuzzy." The data cleared the bar the team set for itself.</p>
+                <p><strong>"Founder-led sales" over-indexed as risk.</strong> At $2.2M ARR, every Series A company is founder-led. The acceleration from 3 to 23 logos in 10 months matters more.</p>
+            </div>
+        </div>
+
+        <h3>The Core Question the Team Isn't Asking</h3>
+        <div class="rec-box">
+            <p class="highlight" style="margin-bottom: 0;">The team sized the <strong>wedge</strong> ($600-800M in AI lifecycle marketing), not the <strong>platform</strong> (AI-native CEP replacing $5-10B+ of incumbent spend). Every customer independently said they want JustAI to eat into Braze/Iterable's stack. The real question is not "is the AI lifecycle marketing TAM big enough" but "can JustAI become the AI-native customer engagement platform and absorb incumbent spend?"</p>
+        </div>
+    </section>
+
+    <!-- MISS PATTERNS -->
+    <section id="patterns">
+        <h2>B10 Miss Patterns That Predict Consensus</h2>
+        <p class="highlight">Analysis of Base10's historical misses reveals 7 recurring patterns. These are the internal reasoning patterns that, when present at the time of a pass decision, have historically preceded the company becoming consensus (raising $25M+ from a top-30 firm). These are not "bad decisions" - they are systematic blind spots that, when recognized in real-time, should trigger additional scrutiny before passing.</p>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 1: "Category Is Sucky" / Static TAM Framing</h4>
+                <span class="pattern-match high">HIGH PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Team sizes the TAM based on the company's current product and ICP, concludes the market is too small or the category isn't attractive enough. Fails to account for the company expanding into adjacent functionality and absorbing incumbent spend.</p>
+            <p><strong>Historical examples:</strong> Companies building "point solutions" in seemingly niche categories that later became platforms. The TAM at time of evaluation was technically correct but missed the expansion vector.</p>
+            <p><strong>Why it predicts consensus:</strong> Top-tier firms are often better at pattern-matching "wedge into platform" stories. They invest in the trajectory, not the current TAM. When B10 passes on TAM and a top-5 firm leads the next round, it's usually because they saw the platform play we sized as a wedge.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill high" style="width: 85%;"></div></div>
+                <span class="meter-label">85%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 2: "Fuzzy Despite Work"</h4>
+                <span class="pattern-match high">HIGH PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Team does extensive diligence (market mapping, customer calls, comp analysis) but the conclusion is "it's still fuzzy." The work itself was rigorous but the framing prevents conviction from forming. Customer data is strong but gets discounted because the market narrative hasn't crystallized internally.</p>
+            <p><strong>Why it predicts consensus:</strong> "Fuzzy" often means the company is creating a new category or is at the inflection point before narrative clarity. Top firms invest through ambiguity when the customer signal is clear. By the time it's not "fuzzy" to everyone, the price has 3-5x'd.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill high" style="width: 80%;"></div></div>
+                <span class="meter-label">80%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 3: Customer Signal Discounted by Market Thesis</h4>
+                <span class="pattern-match high">HIGH PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Customer references come back exceptionally strong (9-10 NPS, hard ROI, willing to invest, unsolicited referrals) but the team discounts them because the market framing doesn't support conviction. The data says yes, the thesis says no. Thesis wins.</p>
+            <p><strong>Why it predicts consensus:</strong> Customer love at the early stage is the single strongest predictor of breakout outcomes. When 4/4 customer calls are 9-10 NPS with hard ROI and expansion intent, that signal should override market sizing concerns. Firms like Benchmark and Sequoia famously invest on customer signal alone.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill high" style="width: 90%;"></div></div>
+                <span class="meter-label">90%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 4: "Growth Is Too Recent" / Recency Discount</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Company shows strong acceleration in last 3-6 months but team discounts it as "too early to tell" or "not enough data points to predict." Prefers to wait for another quarter of data.</p>
+            <p><strong>Why it predicts consensus:</strong> Waiting for more data at the Series A is the most expensive form of de-risking. The price will 2-3x by the time the next quarter confirms what the current quarter already shows. The best Series A investors bet on the slope of the curve, not the length of the track record.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 70%;"></div></div>
+                <span class="meter-label">70%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 5: Incumbent Response Over-Indexed</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Team worries that Braze / Iterable / Salesforce / [incumbent] will build competitive functionality and eat the startup's lunch. Weighs theoretical incumbent response more heavily than the observed reality (slow-moving, minimal AI features, 6-week response times).</p>
+            <p><strong>Why it predicts consensus:</strong> In the AI era, incumbent response speed has been consistently slower than feared. The startups that became consensus in 2024-2026 were ones where incumbents could have responded but didn't move fast enough. Investors who waited for "proof the incumbent won't respond" missed the entry window.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 65%;"></div></div>
+                <span class="meter-label">65%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 6: "Never Followed Up" / Lead Dropped</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Company was evaluated, flagged as interesting, but deal lead moved on to higher-priority deals. No explicit pass decision, just deprioritization. By the time someone circles back, the round is done or the price has moved.</p>
+            <p><strong>Why it predicts consensus:</strong> Opportunity cost of the pipeline. When the team is capacity-constrained, the deals that get deprioritized are often ones that are "interesting but not urgent" - which is exactly the profile of early-stage companies before they hit inflection.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 60%;"></div></div>
+                <span class="meter-label">60%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 7: Pricing Anchoring / "We Can Wait"</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Valuation at current round feels high relative to current metrics. Team assumes they can enter later at a better price, or that the company will need to raise again at a reasonable price if things slow down. "Let's track for the Series B."</p>
+            <p><strong>Why it predicts consensus:</strong> Companies that become consensus never get cheaper. The $80-100M post that feels rich at $2.2M ARR becomes the $400M+ Series B at $15M ARR. The "we can wait" trade almost never works for breakout companies.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 60%;"></div></div>
+                <span class="meter-label">60%</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- JUSTAI PATTERN MATCH -->
+    <section id="justai-pattern-match">
+        <h2>JustAI Pattern Match Scorecard</h2>
+        <p class="highlight">How does JustAI map against each of the 7 historical miss patterns? A "match" means the current internal reasoning mirrors what we said about past companies that became consensus.</p>
+
+        <table>
+            <tr>
+                <th>Pattern</th>
+                <th>Match?</th>
+                <th>Evidence</th>
+                <th>Severity</th>
+            </tr>
+            <tr>
+                <td>1. Static TAM / "Category is sucky"</td>
+                <td style="color: var(--red); font-weight: 600;">STRONG MATCH</td>
+                <td>Rexhi: "while this is a good product for some, the category remains sucky." Dani sized TAM at $600-800M (wedge only). Customers independently signal platform expansion.</td>
+                <td><span class="pattern-match high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>2. "Fuzzy despite work"</td>
+                <td style="color: var(--red); font-weight: 600;">STRONG MATCH</td>
+                <td>Rexhi: "more generally pass is 'this is quite fuzzy despite work' than TAM." Direct quote, exact pattern match.</td>
+                <td><span class="pattern-match high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>3. Customer signal discounted</td>
+                <td style="color: var(--red); font-weight: 600;">STRONG MATCH</td>
+                <td>4/4 customers at 9-10 NPS. Investment offers from customers. "Changed my life" quotes. Bar was met but conclusion didn't follow.</td>
+                <td><span class="pattern-match high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>4. Recency discount</td>
+                <td style="color: var(--amber); font-weight: 600;">PARTIAL MATCH</td>
+                <td>"Growth is last 4 months so hard to predict this year." $1M to $2.2M in 4 months discounted as insufficient data.</td>
+                <td><span class="pattern-match medium">MED</span></td>
+            </tr>
+            <tr>
+                <td>5. Incumbent over-indexed</td>
+                <td style="color: var(--amber); font-weight: 600;">PARTIAL MATCH</td>
+                <td>Concern that Braze/Iterable "may launch competing functionality." Meanwhile Iterable took 6 weeks to book a call. Customer.io hasn't shipped in 6 months.</td>
+                <td><span class="pattern-match medium">MED</span></td>
+            </tr>
+            <tr>
+                <td>6. Lead dropped / deprioritized</td>
+                <td style="color: var(--green); font-weight: 600;">WEAK MATCH</td>
+                <td>Deal was not top priority (Dani: "hasn't been moved to top prio"). But diligence was done. Mostly an attention allocation issue.</td>
+                <td><span class="pattern-match low">LOW</span></td>
+            </tr>
+            <tr>
+                <td>7. Pricing anchoring</td>
+                <td style="color: var(--green); font-weight: 600;">WEAK MATCH</td>
+                <td>$80-100M post for $2.2M ARR. Not explicitly flagged as "too expensive" but implicit in the "let the SB team track" framing.</td>
+                <td><span class="pattern-match low">LOW</span></td>
+            </tr>
+        </table>
+
+        <div class="charts-row" style="margin-top: 30px;">
+            <div class="chart-container">
+                <canvas id="patternChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- CUSTOMER EVIDENCE -->
+    <section id="customer-evidence">
+        <h2>Customer Evidence Deep Dive</h2>
+        <p class="highlight">The team's own bar was: "We need to hear directly from customers that this is an absolute, no-brainer step change in their workflow." Here is what 4 customers actually said:</p>
+
+        <table>
+            <tr>
+                <th>Customer</th>
+                <th>ACV</th>
+                <th>NPS</th>
+                <th>Hard ROI</th>
+                <th>Would Replace Incumbent?</th>
+                <th>Would Invest?</th>
+            </tr>
+            <tr>
+                <td><strong>ClickUp</strong><br>Head of Lifecycle Marketing</td>
+                <td>$60K</td>
+                <td style="color: var(--green); font-weight: 600;">10/10</td>
+                <td>50-70% DAU improvement, 20-30% free-to-pay improvement, 100% feature usage increase. 300 campaign segments vs. 5-7 pre-JustAI.</td>
+                <td style="color: var(--green);">Yes - "would seriously consider switching." Spending $500K on Iterable today.</td>
+                <td style="color: var(--green);">Yes</td>
+            </tr>
+            <tr>
+                <td><strong>Notion</strong><br>Former Head of Growth</td>
+                <td>N/A (ref)</td>
+                <td style="color: var(--green); font-weight: 600;">10/10</td>
+                <td>"Deep understanding of customers and workflows." Compared to Clay / Airops for lifecycle.</td>
+                <td style="color: var(--green);">Already peeling off non-critical functionality from Customer.io to JustAI.</td>
+                <td style="color: var(--green);">Yes - actively trying to invest</td>
+            </tr>
+            <tr>
+                <td><strong>Scribd</strong><br>Head of Lifecycle Marketing</td>
+                <td>$60K</td>
+                <td style="color: var(--green); font-weight: 600;">9/10</td>
+                <td>"We were playing checkers and now we are playing chess." Team offered to forfeit salaries after demo.</td>
+                <td style="color: var(--amber);">Using Iterable, "pay them literally millions." Hard to justify additional budget unless step-change (which this was).</td>
+                <td>N/A</td>
+            </tr>
+            <tr>
+                <td><strong>Better</strong></td>
+                <td>N/A</td>
+                <td style="color: var(--green); font-weight: 600;">10/10</td>
+                <td>129% increase (step-change) in core KPI (applications received). "Changed the way she works / wouldn't go back."</td>
+                <td style="color: var(--green);">Working with JustAI to strip Iterable budget in JustAI's favor.</td>
+                <td>N/A</td>
+            </tr>
+        </table>
+
+        <div class="quote-block">
+            "This is one of the only tools I've been excited about and I've been in the space for over 10 years. I refer people to them all the time."
+            <div class="quote-attr">- Head of Lifecycle Marketing, ClickUp (paying $60K to JustAI, $500K to Iterable)</div>
+        </div>
+
+        <div class="quote-block">
+            "The moat is clearly on JustAI's side, not Iterable's. I see a world where JustAI eats Iterable's lunch because the insights piece is much less trivial and email automation platforms are a dime a dozen."
+            <div class="quote-attr">- Head of Lifecycle Marketing, ClickUp</div>
+        </div>
+
+        <div class="quote-block">
+            "They have a very deep understanding of these customers and workflows. I think this has the chance at being a Clay or Airops but for lifecycle marketers."
+            <div class="quote-attr">- Former Head of Growth Marketing, Notion</div>
+        </div>
+
+        <h3>Customer Signal Benchmark</h3>
+        <p>For context, Rexhi and Dani explicitly set the bar before customer calls began:</p>
+        <div class="quote-block">
+            "In order to feel excited about this we need to hear directly from customers that this is an absolute, no-brainer step change in their workflow. We asked her for two customer intros... Once we have these done, we will either push to move quickly and discuss as a group on Monday or will let it go (if product feedback is just okay vs. 'this has changed my life')."
+            <div class="quote-attr">- Dani London, #early-deal-just-ai, March 19, 2026</div>
+        </div>
+        <p style="color: var(--red); font-weight: 500;">Result: Every single customer said this was a step-change. Multiple said "changed my life" equivalent. The bar was met and exceeded. The pass recommendation did not follow from the evidence gathered.</p>
+    </section>
+
+    <!-- TIMELINE -->
+    <section id="timeline">
+        <h2>Deal Timeline</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">March 18, 2026</div>
+                <div class="timeline-text">Channel #early-deal-just-ai created. Dani shares initial data room summary: $2.2M ARR, $100K ACV, 23 logos, $10.5M pipeline.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 19, 2026</div>
+                <div class="timeline-text">Ade asks about interest level (Nate referenced JustAI to HappyRobot's Javi). Rexhi says "TS end of next week." Dani and Rexhi set bar: need "absolute, no-brainer step change" from customers.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 20, 2026</div>
+                <div class="timeline-text">Rexhi asks Dani to push for customer intros from Neha. Acorns intro can't speak until March 30.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 23, 2026</div>
+                <div class="timeline-text">First customer call (Scribd): NPS 9/10. "We were playing checkers and now we are playing chess." Ade: "This is the kind of feedback that would make us lean-in right?"</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 23, 2026</div>
+                <div class="timeline-text">Rexhi pushes back: wants hard ROI numbers, questions whether $60K ACV alongside millions on Iterable confirms "category remains sucky."</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 24, 2026</div>
+                <div class="timeline-text">ClickUp call: NPS 10/10. 50-70% DAU uplift, "moat is on JustAI's side not Iterable's." Would switch if JustAI launched CEP features. Rexhi requests 5 more customer calls.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 25, 2026</div>
+                <div class="timeline-text">Notion call: NPS 10/10, former Head of Growth wants to invest. Already peeling off Customer.io spend. Rexhi gets CMO of Roblox feedback on JustAI. Dani shares CEP comp analysis.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 26, 2026</div>
+                <div class="timeline-text">Better call: NPS 10/10. 129% increase in core KPI. Iterable took 6 weeks to book an exploratory call.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 27, 2026</div>
+                <div class="timeline-text">Dani posts market analysis summary: PMF confirmed in core ICP, TAM sized at $600-800M, skeptical of expansion without more proof. Recommends "Series B team to track." <strong>Ade DMs Rexhi: "Seems like in JustAI we want to pass based on TAM...usually does not bode well for us."</strong> Rexhi clarifies: "more generally pass is 'this is quite fuzzy despite work.'"</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 31, 2026</div>
+                <div class="timeline-text">Ade asks for company brief and EV. Dani: "15-20M at max 20% dilution, will likely land 80-100M post." Ade: "Let me discuss with Rexhi." Decision pending.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RECOMMENDATION -->
+    <section id="recommendation">
+        <h2>Investment Recommendation</h2>
+
+        <div class="rec-box" style="border-color: var(--green);">
+            <h4 style="color: var(--green);">Recommendation: Lean In - Do Not Pass Without IC Discussion</h4>
+            <p class="highlight">The evidence gathered by the team <strong>exceeded the bar the team set for itself</strong>. Every customer reference came back as a no-brainer step change. The pass rationale ("fuzzy," "category is sucky," "TAM") matches 5 of 7 historical miss patterns. Ade's own instinct ("passing on TAM usually does not bode well for us") correctly identifies the risk.</p>
+        </div>
+
+        <h3>Specific Actions</h3>
+        <table>
+            <tr><th>Action</th><th>Rationale</th><th>Owner</th></tr>
+            <tr>
+                <td>Request Dani produce company brief immediately</td>
+                <td>She confirmed she can "make one asap." No brief = no IC discussion = passive pass by inaction (Pattern 6).</td>
+                <td>Ade / Dani</td>
+            </tr>
+            <tr>
+                <td>Schedule IC discussion this week</td>
+                <td>Neha's timeline: TS end of last week was target. Clock is running. Waiting = pricing moves (Pattern 7).</td>
+                <td>Ade / Rexhi</td>
+            </tr>
+            <tr>
+                <td>Reframe the question for IC</td>
+                <td>Not "is the lifecycle marketing TAM big enough?" but "can JustAI become the AI-native CEP and absorb $5-10B+ of incumbent spend?" Size the platform, not the wedge.</td>
+                <td>Dani</td>
+            </tr>
+            <tr>
+                <td>Confirm pipeline viability</td>
+                <td>$10.5M in mid-to-late pipeline targeting $20M NTM. Dani was going to do deeper pipeline review with Neha. Has this happened?</td>
+                <td>Dani</td>
+            </tr>
+            <tr>
+                <td>Get 1-2 more customer calls focused on expansion intent</td>
+                <td>Rexhi requested 5 more. Even 1-2 focused on "would you replace Iterable/Braze entirely?" would resolve remaining ambiguity.</td>
+                <td>Dani</td>
+            </tr>
+        </table>
+
+        <h3>What Happens If We Pass</h3>
+        <p>Most likely scenario: JustAI raises $15-20M from a Tier 1-2 firm within 60 days. Ships CEP functionality in 6-12 months as customers are already requesting. 3-4x's ARR as enterprise customers shift Iterable/Braze budget. Raises a $50M+ Series B at $400M+ within 18 months. Appears in next quarter's CRM Miss Analysis as a Tier 1-2 miss, alongside the same pattern notes we're documenting here.</p>
+
+        <h3>Risk If We Invest</h3>
+        <p>The bear case is real: expansion into CEP functionality is unproven, GTM is founder-led, and the 4-month acceleration could flatten. But at $80-100M post, the downside is a manageable Series A check against a company with $2.2M ARR, 10/10 NPS customers, and a clear path to $10M+ ARR. The risk-reward is asymmetric in favor of investing.</p>
+    </section>
+
+    <footer>
+        <p>Confidential &middot; Prepared by Adeyemi Ajao - Base10 Partners</p>
+        <p>CRM Miss Analysis Framework v1.0 &middot; Generated March 31, 2026</p>
+        <p style="margin-top: 8px;"><a href="index.html" style="color: var(--accent); text-decoration: none;">Back to CRM Miss Analysis Dashboard &rarr;</a></p>
+    </footer>
+</div>
+
+<script>
+// Pattern Match Bar Chart
+const patternCtx = document.getElementById('patternChart').getContext('2d');
+new Chart(patternCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Static TAM', 'Fuzzy\nDespite Work', 'Customer\nDiscounted', 'Recency\nDiscount', 'Incumbent\nOver-indexed', 'Lead\nDropped', 'Pricing\nAnchoring'],
+        datasets: [{
+            label: 'JustAI Pattern Match Strength',
+            data: [85, 80, 90, 70, 65, 35, 40],
+            backgroundColor: [
+                'rgba(248, 113, 113, 0.7)',
+                'rgba(248, 113, 113, 0.7)',
+                'rgba(248, 113, 113, 0.7)',
+                'rgba(251, 191, 36, 0.7)',
+                'rgba(251, 191, 36, 0.7)',
+                'rgba(52, 211, 153, 0.7)',
+                'rgba(52, 211, 153, 0.7)'
+            ],
+            borderColor: [
+                '#F87171', '#F87171', '#F87171',
+                '#FBBF24', '#FBBF24',
+                '#34D399', '#34D399'
+            ],
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: { display: true, text: 'JustAI: Miss Pattern Match Strength', color: '#E8EDF4', font: { size: 14, weight: 600 } },
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true, max: 100,
+                ticks: { color: '#8899B0', callback: v => v + '%' },
+                grid: { color: 'rgba(36,51,82,0.5)' }
+            },
+            x: {
+                ticks: { color: '#8899B0', font: { size: 10 } },
+                grid: { display: false }
+            }
+        }
+    }
+});
+
+// Radar Chart - Investment Signal Assessment
+const radarCtx = document.getElementById('radarChart').getContext('2d');
+new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+        labels: ['Customer Love', 'Growth Trajectory', 'Market Size (Platform)', 'Founder Quality', 'Competitive Moat', 'Valuation', 'GTM Repeatability'],
+        datasets: [{
+            label: 'JustAI Signal Strength',
+            data: [95, 80, 75, 80, 70, 65, 45],
+            backgroundColor: 'rgba(69, 174, 235, 0.2)',
+            borderColor: '#45AEEB',
+            borderWidth: 2,
+            pointBackgroundColor: '#45AEEB',
+            pointRadius: 4
+        }, {
+            label: 'Typical B10 Invest Threshold',
+            data: [70, 70, 70, 70, 60, 60, 60],
+            backgroundColor: 'rgba(136, 153, 176, 0.1)',
+            borderColor: '#5A6E88',
+            borderWidth: 1,
+            borderDash: [5, 5],
+            pointRadius: 2,
+            pointBackgroundColor: '#5A6E88'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: { display: true, text: 'Investment Signal Assessment', color: '#E8EDF4', font: { size: 14, weight: 600 } },
+            legend: { labels: { color: '#8899B0', font: { size: 11 } } }
+        },
+        scales: {
+            r: {
+                beginAtZero: true, max: 100,
+                ticks: { display: false },
+                grid: { color: 'rgba(36,51,82,0.5)' },
+                pointLabels: { color: '#8899B0', font: { size: 10 } },
+                angleLines: { color: 'rgba(36,51,82,0.5)' }
+            }
+        }
+    }
+});
+</script>
+</body>
+</html>
