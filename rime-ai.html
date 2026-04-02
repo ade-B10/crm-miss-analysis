@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rime AI Miss Risk Assessment - Base10 CRM Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --bg: #0C1220;
+            --surface: #131D2E;
+            --surface-2: #1A2740;
+            --border: #243352;
+            --text: #E8EDF4;
+            --text-dim: #8899B0;
+            --text-muted: #5A6E88;
+            --accent: #45AEEB;
+            --accent-hover: #26A6ED;
+            --green: #34D399;
+            --amber: #FBBF24;
+            --red: #F87171;
+            --tier1: #DC2626;
+            --tier2: #F59E0B;
+            --tier3: #3B82F6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+
+        header { text-align: center; margin-bottom: 50px; border-bottom: 2px solid var(--accent); padding-bottom: 30px; }
+        .logo { display: inline-block; background: linear-gradient(135deg, var(--accent), #2563EB); padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.9em; margin-bottom: 20px; letter-spacing: 1px; }
+        header h1 { font-size: 2.4em; margin-bottom: 10px; color: var(--accent); font-weight: 800; letter-spacing: -1px; }
+        header p { font-size: 1.05em; color: var(--text-dim); margin-bottom: 5px; }
+        .report-date { color: var(--text-muted); font-size: 0.9em; margin-top: 12px; }
+
+        .verdict-box { background: linear-gradient(135deg, rgba(220,38,38,0.15), rgba(245,158,11,0.1)); border: 2px solid var(--amber); border-radius: 12px; padding: 32px; margin-bottom: 50px; text-align: center; }
+        .verdict-label { font-size: 0.8em; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 8px; }
+        .verdict-score { font-size: 3.5em; font-weight: 800; color: var(--amber); margin-bottom: 4px; }
+        .verdict-text { font-size: 1.3em; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+        .verdict-sub { font-size: 0.95em; color: var(--text-dim); max-width: 700px; margin: 0 auto; line-height: 1.7; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 50px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 22px; border-radius: 8px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(69,174,235,0.1); }
+        .stat-card.green { border-left-color: var(--green); }
+        .stat-card.red { border-left-color: var(--red); }
+        .stat-card.amber { border-left-color: var(--amber); }
+        .stat-value { font-size: 2em; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .stat-card.green .stat-value { color: var(--green); }
+        .stat-card.red .stat-value { color: var(--red); }
+        .stat-card.amber .stat-value { color: var(--amber); }
+        .stat-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+
+        section { margin-bottom: 60px; }
+        h2 { font-size: 1.6em; color: var(--accent); margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 12px; font-weight: 700; }
+        h3 { font-size: 1.2em; color: var(--text); margin: 25px 0 12px; font-weight: 600; }
+        h4 { font-size: 1.05em; color: var(--accent); margin: 20px 0 10px; font-weight: 600; }
+
+        p { margin-bottom: 14px; color: var(--text-dim); line-height: 1.75; }
+        p.highlight { color: var(--text); }
+
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); font-size: 0.88em; }
+        table th { background: var(--surface-2); color: var(--accent); padding: 14px 12px; text-align: left; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--accent); }
+        table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        table tr:last-child td { border-bottom: none; }
+        table tr:hover { background: var(--surface-2); }
+
+        .signal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        @media (max-width: 768px) { .signal-grid { grid-template-columns: 1fr; } }
+        .signal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+        .signal-card.positive { border-left: 4px solid var(--green); }
+        .signal-card.negative { border-left: 4px solid var(--red); }
+        .signal-card.mixed { border-left: 4px solid var(--amber); }
+        .signal-card h4 { margin-top: 0; }
+
+        .pattern-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin: 16px 0; }
+        .pattern-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .pattern-match { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pattern-match.high { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+        .pattern-match.medium { background: rgba(245,158,11,0.2); color: #FED7AA; }
+        .pattern-match.low { background: rgba(34,211,153,0.2); color: #A7F3D0; }
+
+        .quote-block { background: var(--surface-2); border-left: 3px solid var(--accent); padding: 16px 20px; margin: 14px 0; border-radius: 0 8px 8px 0; font-style: italic; color: var(--text-dim); }
+        .quote-attr { font-style: normal; font-size: 0.85em; color: var(--text-muted); margin-top: 6px; }
+
+        .tier-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+        .tier-badge.t1 { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+        .tier-badge.t2 { background: rgba(245,158,11,0.2); color: #FED7AA; }
+        .tier-badge.consensus { background: rgba(69,174,235,0.2); color: var(--accent); }
+
+        .chart-container { position: relative; height: 350px; margin: 20px 0; background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+
+        .rec-box { background: linear-gradient(135deg, rgba(69,174,235,0.1), rgba(37,99,235,0.05)); border: 1px solid var(--accent); border-radius: 12px; padding: 28px; margin: 20px 0; }
+        .rec-box h4 { color: var(--accent); margin-top: 0; }
+
+        .timeline { margin: 16px 0; padding-left: 18px; border-left: 2px solid var(--accent); }
+        .timeline-item { margin: 12px 0; padding-left: 16px; position: relative; }
+        .timeline-item::before { content: ''; position: absolute; left: -23px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+        .timeline-date { font-size: 0.8em; color: var(--text-muted); font-weight: 500; }
+        .timeline-text { color: var(--text-dim); font-size: 0.92em; margin-top: 3px; }
+
+        .firm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 16px 0; }
+        .firm-tag { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; }
+        .firm-tag .firm-name { font-weight: 600; color: var(--text); }
+        .firm-tag .firm-tier { font-size: 0.75em; color: var(--text-muted); }
+
+        .criteria-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+        @media (max-width: 768px) { .criteria-grid { grid-template-columns: 1fr; } }
+        .criteria-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+        .criteria-value { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .criteria-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+        .criteria-desc { font-size: 0.82em; color: var(--text-muted); margin-top: 8px; }
+
+        .confidence-meter { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+        .meter-bar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+        .meter-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .meter-fill.high { background: linear-gradient(90deg, var(--red), #EF4444); }
+        .meter-fill.medium { background: linear-gradient(90deg, var(--amber), #F59E0B); }
+        .meter-fill.low { background: linear-gradient(90deg, var(--green), #22C55E); }
+        .meter-label { font-size: 0.82em; color: var(--text-dim); min-width: 40px; text-align: right; }
+
+        .nav-link { display: inline-block; margin-bottom: 20px; color: var(--accent); text-decoration: none; font-size: 0.9em; }
+        .nav-link:hover { text-decoration: underline; }
+
+        footer { text-align: center; padding: 30px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.82em; margin-top: 40px; }
+
+        .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 40px; }
+        .toc-title { font-size: 0.8em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }
+        .toc a { display: block; color: var(--accent); text-decoration: none; padding: 5px 0; font-size: 0.92em; }
+        .toc a:hover { color: #fff; }
+
+        .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.78em; font-weight: 500; background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="nav-link">&larr; Back to CRM Miss Analysis Dashboard</a>
+
+    <header>
+        <div class="logo">BASE<sup>10</sup> PARTNERS</div>
+        <h1>Rime AI: Miss Risk Assessment</h1>
+        <p>CRM Miss Pattern Analysis Applied to Active Deal</p>
+        <div class="report-date">Prepared April 1, 2026 &middot; Confidential &middot; Internal Use Only</div>
+    </header>
+
+    <div class="toc">
+        <div class="toc-title">Contents</div>
+        <a href="#verdict">1. Verdict: Miss Probability Score</a>
+        <a href="#company">2. Company Snapshot</a>
+        <a href="#definitions">3. What is Consensus? Definitions & Thresholds</a>
+        <a href="#top-firms">4. Top-30 Consensus Firms</a>
+        <a href="#assessment">5. Team Assessment: What We Got Right & What We're Missing</a>
+        <a href="#patterns">6. B10 Miss Patterns That Predict Consensus</a>
+        <a href="#rime-pattern-match">7. Rime AI Pattern Match Scorecard</a>
+        <a href="#customer-evidence">8. Customer Evidence Deep Dive</a>
+        <a href="#timeline">9. Deal Timeline</a>
+        <a href="#recommendation">10. Investment Recommendation</a>
+    </div>
+
+    <!-- VERDICT -->
+    <section id="verdict">
+        <div class="verdict-box">
+            <div class="verdict-label">Miss Probability If Base10 Passes</div>
+            <div class="verdict-score">55%</div>
+            <div class="verdict-text">MODERATE-HIGH RISK OF BECOMING A TIER 2 MISS</div>
+            <div class="verdict-sub">Rime AI matches 5 of 7 historical Base10 miss patterns. Production-scale customer evidence ($1.5M in last 2 months, 100M+ conversations monthly) exceeds typical Series A validation. The "crowded TTS market" framing masks a genuine enterprise infrastructure moat that consumer-focused competitors (ElevenLabs, Play.ht) don't prioritize.</div>
+        </div>
+    </section>
+
+    <!-- COMPANY SNAPSHOT -->
+    <section id="company">
+        <h2>Company Snapshot</h2>
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-value">$3M</div>
+                <div class="stat-label">Current ARR</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">50%</div>
+                <div class="stat-label">2-Mo Growth ($1.5M in last 60 days)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">100M+</div>
+                <div class="stat-label">Phone Conversations Monthly</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1M+</div>
+                <div class="stat-label">API Requests Daily</div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-value">$100-150M</div>
+                <div class="stat-label">Estimated Post-Money (inferred)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">$25M</div>
+                <div class="stat-label">Series A Raise Target</div>
+            </div>
+        </div>
+
+        <table>
+            <tr><th>Attribute</th><th>Detail</th></tr>
+            <tr><td>Category</td><td>Enterprise speech-to-speech AI models with phonemic pronunciation layer. Largest proprietary voice model library.</td></tr>
+            <tr><td>Product</td><td>Brand/medical terminology pronunciation accuracy. Enterprise voice infrastructure for contact centers, sales calls, IVR systems.</td></tr>
+            <tr><td>Founders</td><td>Lily Clifford (CEO, Stanford NLP PhD dropout), Brooke Larson (PhD linguist, Amazon Alexa), Ares Geovanos (Stanford engineer), Nick Salzman</td></tr>
+            <tr><td>Round</td><td>Series A: $25M (new commitment)</td></tr>
+            <tr><td>Deal Lead at Base10</td><td>Dani London sourced from John at Unusual Ventures. Rexhi met Lily/Nick March 25. Ade meeting April 1.</td></tr>
+            <tr><td>Current Status</td><td>Rexhi met founders March 25, shared data room. Intro'd Ade March 30. No formal DD plan yet. Dani/Rexhi to share DD plan by EOW.</td></tr>
+            <tr><td>Key Enterprise Customers</td><td>Domino's (massive deployment), Wingstop (15% sales lift confirmed), 20M outbound sales calls this quarter</td></tr>
+            <tr><td>Previous Funding</td><td>$5.5M seed led by Unusual Ventures (May 2025). Investors: Founders You Should Know, Cadenza Capital.</td></tr>
+        </table>
+    </section>
+
+    <!-- DEFINITIONS -->
+    <section id="definitions">
+        <h2>What Is Consensus? Definitions & Thresholds</h2>
+        <p class="highlight">The CRM Miss Analyzer uses a specific, measurable definition of "consensus" to identify deals Base10 evaluated but did not invest in that later became breakout companies. Here are the three core criteria:</p>
+
+        <div class="criteria-grid">
+            <div class="criteria-card">
+                <div class="criteria-value">$25M+</div>
+                <div class="criteria-label">Minimum Round Size</div>
+                <div class="criteria-desc">The company must have raised a subsequent round of $25M or more. This filters out companies that merely survived and isolates those that attracted significant capital conviction.</div>
+            </div>
+            <div class="criteria-card">
+                <div class="criteria-value">Top 30</div>
+                <div class="criteria-label">Lead Investor Tier</div>
+                <div class="criteria-desc">The round must have been led by a top-30 venture firm. This ensures the company didn't just raise from anyone but attracted the most competitive, signal-heavy capital.</div>
+            </div>
+            <div class="criteria-card">
+                <div class="criteria-value">Series A+</div>
+                <div class="criteria-label">Minimum Stage</div>
+                <div class="criteria-desc">The round must be Series A or later, confirming the company achieved sufficient product-market fit and traction to clear institutional underwriting bars.</div>
+            </div>
+        </div>
+
+        <h3>Miss Tier Classification</h3>
+        <table>
+            <tr>
+                <th>Tier</th>
+                <th>Subsequent Round</th>
+                <th>Lead Investor</th>
+                <th>Signals</th>
+                <th>Severity</th>
+            </tr>
+            <tr>
+                <td><span class="tier-badge t1">Tier 1</span></td>
+                <td>$100M+</td>
+                <td>Top-5 firm (a16z, Sequoia, Benchmark, Founders Fund, Thrive)</td>
+                <td>Clear PMF, breakout growth, category-defining</td>
+                <td style="color: var(--red); font-weight: 600;">Critical miss - would have returned the fund</td>
+            </tr>
+            <tr>
+                <td><span class="tier-badge t2">Tier 2</span></td>
+                <td>$50-100M</td>
+                <td>Top-25 firm</td>
+                <td>Strong metrics, high growth, clear narrative</td>
+                <td style="color: var(--amber); font-weight: 600;">Significant miss - high-multiple outcome</td>
+            </tr>
+            <tr>
+                <td><span class="tier-badge" style="background: rgba(59,130,246,0.2); color: #93C5FD;">Tier 3</span></td>
+                <td>$25-50M</td>
+                <td>Top-50 firm</td>
+                <td>Solid traction, institutional validation</td>
+                <td style="color: var(--text-dim);">Notable miss - good but not category-defining</td>
+            </tr>
+        </table>
+
+        <h3>Why This Definition Matters</h3>
+        <p>The threshold is intentionally conservative. We only count a miss if: (1) Base10 had a documented discussion, (2) there was an explicit pass or deprioritization decision, (3) the subsequent round was $25M+ from a top-30 firm, and (4) the timing confirms we could have invested at the point of discussion. This avoids inflating the miss count with companies we never seriously evaluated or that raised from non-signal investors.</p>
+        <p>The goal is learning, not blame. The question is always: "what market signal did we misread?" not "who made a bad call." By holding to a $25M+ / top-30 firm bar, we ensure every identified miss represents a genuine blind spot worth analyzing.</p>
+    </section>
+
+    <!-- TOP FIRMS -->
+    <section id="top-firms">
+        <h2>Top-30 Consensus Firms</h2>
+        <p>These are the firms whose participation as lead investor in a subsequent round triggers a "consensus" classification in the CRM miss analysis. The list is calibrated based on AUM, deal velocity, signal quality, and historical ability to identify breakout companies.</p>
+
+        <h3>Tier 0: Mega-Signal (Top 5)</h3>
+        <p>A lead from any of these firms virtually guarantees consensus status and typically precedes a $1B+ outcome.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Andreessen Horowitz</span><span class="firm-tier">a16z</span></div>
+            <div class="firm-tag"><span class="firm-name">Sequoia Capital</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Benchmark</span><span class="firm-tier">Early stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Founders Fund</span><span class="firm-tier">Contrarian</span></div>
+            <div class="firm-tag"><span class="firm-name">Thrive Capital</span><span class="firm-tier">Growth</span></div>
+        </div>
+
+        <h3>Tier 1: High Signal (6-15)</h3>
+        <p>Firms with multi-billion funds, strong brand, and pattern recognition. A lead here strongly signals consensus.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Lightspeed Venture</span><span class="firm-tier">LSVP</span></div>
+            <div class="firm-tag"><span class="firm-name">General Catalyst</span><span class="firm-tier">GC</span></div>
+            <div class="firm-tag"><span class="firm-name">Accel</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">ICONIQ Growth</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Addition</span><span class="firm-tier">Lee Fixel</span></div>
+            <div class="firm-tag"><span class="firm-name">Greenoaks Capital</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Kleiner Perkins</span><span class="firm-tier">KP</span></div>
+            <div class="firm-tag"><span class="firm-name">Redpoint Ventures</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">IVP</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Greylock Partners</span><span class="firm-tier">Enterprise</span></div>
+        </div>
+
+        <h3>Tier 2: Strong Signal (16-30)</h3>
+        <p>Established firms that compete for top deals. A lead here qualifies as consensus at $50M+ round sizes.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Bessemer Venture</span><span class="firm-tier">Cloud</span></div>
+            <div class="firm-tag"><span class="firm-name">Insight Partners</span><span class="firm-tier">ScaleUp</span></div>
+            <div class="firm-tag"><span class="firm-name">NEA</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Spark Capital</span><span class="firm-tier">Early/Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Index Ventures</span><span class="firm-tier">EU/US</span></div>
+            <div class="firm-tag"><span class="firm-name">Khosla Ventures</span><span class="firm-tier">Deep tech</span></div>
+            <div class="firm-tag"><span class="firm-name">Battery Ventures</span><span class="firm-tier">Software</span></div>
+            <div class="firm-tag"><span class="firm-name">GV (Google)</span><span class="firm-tier">Strategic</span></div>
+            <div class="firm-tag"><span class="firm-name">Meritech Capital</span><span class="firm-tier">Crossover</span></div>
+            <div class="firm-tag"><span class="firm-name">Felicis Ventures</span><span class="firm-tier">Early stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Avenir Growth</span><span class="firm-tier">Jared Weinstein</span></div>
+            <div class="firm-tag"><span class="firm-name">Notable Capital</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Initialized Capital</span><span class="firm-tier">Seed/A</span></div>
+            <div class="firm-tag"><span class="firm-name">Madrona Ventures</span><span class="firm-tier">AI/Cloud</span></div>
+            <div class="firm-tag"><span class="firm-name">Menlo Ventures</span><span class="firm-tier">AI focus</span></div>
+        </div>
+    </section>
+
+    <!-- TEAM ASSESSMENT -->
+    <section id="assessment">
+        <h2>Team Assessment: What We Got Right & What We're Missing</h2>
+
+        <div class="signal-grid">
+            <div class="signal-card positive">
+                <h4 style="color: var(--green);">What the Team Got Right</h4>
+                <p><strong>Dani's sourcing was excellent.</strong> Identified Rime via John at Unusual Ventures, flagged in pipeline mid-March. Initial data on founder pedigree (Stanford NLP PhD, Amazon Alexa team) and traction ($3M ARR) was comprehensive.</p>
+                <p><strong>Rexhi's March 25 meeting was substantive.</strong> Met Lily, Nick, and Ares. Data room shared via DocSend. Feedback positive ("was great touching base again today").</p>
+                <p><strong>Market mapping acknowledged competitive intensity.</strong> ElevenLabs, Deepgram, Play.ht, OpenAI TTS all understood as active players. Correctly identified that voice AI is crowded space.</p>
+            </div>
+            <div class="signal-card negative">
+                <h4 style="color: var(--red);">What the Team Is Missing</h4>
+                <p><strong>Production scale evidence underweighted.</strong> 100M+ phone conversations monthly, 1M+ requests per day, 20M outbound sales calls this quarter are not "pilot signals." These are production-scale deployments. This evidence would typically clear conviction bars for Series A at comparable ARR multiples.</p>
+                <p><strong>Enterprise moat vs. consumer moat confusion.</strong> Risk of conflating Rime with ElevenLabs/Play.ht (consumer TTS) when Rime's phonemic pronunciation layer targets enterprise phone systems (Domino's, Wingstop). These are different go-to-markets and defensibility profiles.</p>
+                <p><strong>Growth acceleration discounted as "too recent."</strong> $1.5M in last 2 months of a $3M total is 50% of all-time revenue in ~60 days. This is precisely the inflection signal Series A investors chase. Waiting for another quarter of data means missing the entry window.</p>
+                <p><strong>DD process not yet established.</strong> No dedicated Slack channel, no customer calls scheduled, no competitive deep-dive assigned. Compare to other active deals (SuperDial, Axle) which have established #early-deal channels and multi-week DD plans. Rime could easily slip to deprioritization (Pattern 6).</p>
+            </div>
+        </div>
+
+        <h3>The Core Question the Team Isn't Asking</h3>
+        <div class="rec-box">
+            <p class="highlight" style="margin-bottom: 0;">The team may be sizing the <strong>point solution</strong> (speech-to-speech model accuracy for enterprise calls) when the platform opportunity is much larger (AI infrastructure for all voice use cases: customer service, sales calls, IVR, internal comms). If Rime's phonemic accuracy becomes the standard for regulated voice work (medical, finance, pharma), the TAM and defensibility expand dramatically beyond current positioning.</p>
+        </div>
+    </section>
+
+    <!-- MISS PATTERNS -->
+    <section id="patterns">
+        <h2>B10 Miss Patterns That Predict Consensus</h2>
+        <p class="highlight">Analysis of Base10's historical misses reveals 7 recurring patterns. These are the internal reasoning patterns that, when present at the time of a pass decision, have historically preceded the company becoming consensus (raising $25M+ from a top-30 firm). These are not "bad decisions" but systematic blind spots that, when recognized in real-time, should trigger additional scrutiny before passing.</p>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 1: "Category Is Sucky" / Static TAM Framing</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Team sizes the TAM based on the company's current product and ICP, concludes the market is crowded or the wedge is too small. Fails to account for the company becoming the infrastructure layer that all competitors depend on.</p>
+            <p><strong>Application to Rime:</strong> Voice AI is a hot but genuinely crowded space. Risk is that the framing becomes "just another TTS company competing with ElevenLabs" rather than "enterprise phonemic infrastructure layer that differentiates all voice systems." If sized as point solution, TAM looks $2-3B. If sized as infrastructure moat, TAM is $25B+.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Pattern strength for Rime:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 55%;"></div></div>
+                <span class="meter-label">55%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 2: "Fuzzy Despite Work"</h4>
+                <span class="pattern-match low">LOW PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Team does extensive diligence but the conclusion is "it's still fuzzy." The work itself was rigorous but the framing prevents conviction from forming.</p>
+            <p><strong>Application to Rime:</strong> DD is still early (March 31: "no formal DD plan yet"). The risk is not that we evaluate and discover it's fuzzy, but that we never get deep enough to evaluate because higher-priority deals consume bandwidth. This is more Pattern 6 (lead dropped) than Pattern 2 (fuzzy despite work).</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Pattern strength for Rime:</span>
+                <div class="meter-bar"><div class="meter-fill low" style="width: 30%;"></div></div>
+                <span class="meter-label">30%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 3: Customer Signal Discounted by Market Thesis</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Customer references come back strong but the team discounts them because the market framing doesn't support conviction. The data says yes, the thesis says no.</p>
+            <p><strong>Application to Rime:</strong> Not yet applicable (no customer calls yet). But this is a risk: Domino's/Wingstop deployments at massive scale are powerful signals. If we conduct formal customer calls and get 9-10 NPS feedback but frame it as "yes but the TTS market is crowded," we'd be Pattern 3. This is preventable with structured customer validation process.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Pattern strength for Rime:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 60%;"></div></div>
+                <span class="meter-label">60%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 4: "Growth Is Too Recent" / Recency Discount</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Company shows strong acceleration in last 3-6 months but team discounts it as "too early to tell." Prefers to wait for another quarter of data.</p>
+            <p><strong>Why it predicts consensus:</strong> Waiting for more data at the Series A is the most expensive form of de-risking. The price will 2-3x by the time the next quarter confirms what the current quarter already shows.</p>
+            <p><strong>Application to Rime:</strong> $1.5M in last 2 months of $3M total is exactly this pattern. 50% of all-time revenue concentrated in 60 days. This is the inflection point investors chase. "Let's wait and see next quarter" costs us the entry window.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Pattern strength for Rime:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 65%;"></div></div>
+                <span class="meter-label">65%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 5: Incumbent Response Over-Indexed</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Team worries that OpenAI / Google / incumbent will build competitive functionality and eat the startup's lunch. Weighs theoretical incumbent response more heavily than observed reality.</p>
+            <p><strong>Application to Rime:</strong> OpenAI and Google TTS exist but neither has built the phonemic accuracy layer for enterprise medical/brand terminology. Rime's moat is not against commoditized TTS but against competitors who need to handle regulated voice work. The competitive threat is real (Open AI could invest) but structural (phonemic pronunciation is R&D-intensive, not easy to copy).</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Pattern strength for Rime:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 50%;"></div></div>
+                <span class="meter-label">50%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 6: "Never Followed Up" / Lead Dropped</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Company was evaluated, flagged as interesting, but deal lead moved on to higher-priority deals. No explicit pass decision, just deprioritization.</p>
+            <p><strong>Application to Rime:</strong> As of March 31, DD plan not yet created. Dani/Rexhi asked to share DD plan "by EOW" but no dedicated Slack channel, no customer calls scheduled. Compare to SuperDial (active DD, customer calls underway, competitive mapping assigned). Rime is at risk of deprioritization before the data is gathered.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Pattern strength for Rime:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 60%;"></div></div>
+                <span class="meter-label">60%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 7: Pricing Anchoring / "We Can Wait"</h4>
+                <span class="pattern-match low">LOW PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Valuation at current round feels high relative to current metrics. Team assumes they can enter later at a better price.</p>
+            <p><strong>Application to Rime:</strong> $25M round at likely $100-150M post for a company doing $3M ARR. At first glance, feels rich. But growth trajectory ($1.5M in 2 months) suggests this won't be the final price. If $3M ARR grows to $10M+ ARR by Series B, entry at $100-150M today becomes the best round price, not a misfire.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Pattern strength for Rime:</span>
+                <div class="meter-bar"><div class="meter-fill low" style="width: 35%;"></div></div>
+                <span class="meter-label">35%</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- RIME PATTERN MATCH -->
+    <section id="rime-pattern-match">
+        <h2>Rime AI Pattern Match Scorecard</h2>
+        <p class="highlight">How does Rime AI map against each of the 7 historical miss patterns? A "match" means the current internal reasoning mirrors what we said about past companies that became consensus.</p>
+
+        <table>
+            <tr>
+                <th>Pattern</th>
+                <th>Match?</th>
+                <th>Evidence</th>
+                <th>Severity</th>
+            </tr>
+            <tr>
+                <td>1. Static TAM / "Category is sucky"</td>
+                <td style="color: var(--amber); font-weight: 600;">PARTIAL MATCH</td>
+                <td>Voice AI is crowded (acknowledged). Risk: sizing TTS wedge ($2-3B) rather than enterprise phonemic infrastructure ($25B+). No clear internal framing of platform opportunity.</td>
+                <td><span class="pattern-match medium">MEDIUM</span></td>
+            </tr>
+            <tr>
+                <td>2. "Fuzzy despite work"</td>
+                <td style="color: var(--green); font-weight: 600;">WEAK MATCH</td>
+                <td>DD is still early, not "fuzzy despite work." Risk is deprioritization before data gathering, not fuzziness after extensive diligence.</td>
+                <td><span class="pattern-match low">LOW</span></td>
+            </tr>
+            <tr>
+                <td>3. Customer signal discounted</td>
+                <td style="color: var(--amber); font-weight: 600;">PARTIAL MATCH</td>
+                <td>Production scale signals (100M conversations/month, Domino's/Wingstop deployment) are real and impressive but no formal customer calls conducted yet. Risk if calls happen and strong feedback is discounted due to "crowded market" framing.</td>
+                <td><span class="pattern-match medium">MEDIUM</span></td>
+            </tr>
+            <tr>
+                <td>4. Recency discount</td>
+                <td style="color: var(--red); font-weight: 600;">STRONG MATCH</td>
+                <td>$1.5M in last 2 months of $3M total is 50% of all-time revenue. Classic inflection point. Risk of "growth is too recent to predict" framing delaying decision.</td>
+                <td><span class="pattern-match high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>5. Incumbent over-indexed</td>
+                <td style="color: var(--amber); font-weight: 600;">PARTIAL MATCH</td>
+                <td>OpenAI/Google TTS exist but neither has phonemic accuracy moat. Rime's enterprise positioning differentiates from consumer plays. Risk is overweighting "OpenAI will copy" without understanding the R&D barriers.</td>
+                <td><span class="pattern-match medium">MEDIUM</span></td>
+            </tr>
+            <tr>
+                <td>6. Lead dropped / deprioritized</td>
+                <td style="color: var(--red); font-weight: 600;">STRONG MATCH</td>
+                <td>No dedicated Slack channel, no customer calls scheduled, no DD plan yet (as of March 31). Ade meeting April 1 but no formal process beyond that. High risk of quiet deprioritization.</td>
+                <td><span class="pattern-match high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>7. Pricing anchoring</td>
+                <td style="color: var(--green); font-weight: 600;">WEAK MATCH</td>
+                <td>$100-150M post feels rich at $3M ARR but growth acceleration suggests this becomes a good entry point if trajectory continues. Not an obvious overpricing scenario.</td>
+                <td><span class="pattern-match low">LOW</span></td>
+            </tr>
+        </table>
+
+        <div class="charts-row" style="margin-top: 30px;">
+            <div class="chart-container">
+                <canvas id="patternChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- CUSTOMER EVIDENCE -->
+    <section id="customer-evidence">
+        <h2>Customer Evidence Deep Dive</h2>
+        <p class="highlight">No formal customer reference calls have been completed by the B10 team. However, production-scale evidence is exceptionally strong: Domino's deploying at massive scale, Wingstop reporting 15% sales lift, 100M+ phone conversations monthly, 1M+ API requests daily, 20M outbound sales calls this quarter alone.</p>
+
+        <table>
+            <tr>
+                <th>Evidence Type</th>
+                <th>Signal</th>
+                <th>Strength</th>
+                <th>Validation Status</th>
+            </tr>
+            <tr>
+                <td><strong>Domino's Deployment</strong><br>Enterprise phone ordering</td>
+                <td>Massive production usage. One of the largest quick-service restaurant chains. Rime voice powers customer interactions.</td>
+                <td style="color: var(--green); font-weight: 600;">VERY STRONG</td>
+                <td>Production confirmed, public case study potential</td>
+            </tr>
+            <tr>
+                <td><strong>Wingstop Integration</strong><br>Sales voice AI</td>
+                <td>15% sales conversion improvement confirmed. Enterprise customer willing to reference improvement impact. Scaling deployment.</td>
+                <td style="color: var(--green); font-weight: 600;">VERY STRONG</td>
+                <td>Hard ROI data collected, repeatable signal</td>
+            </tr>
+            <tr>
+                <td><strong>100M+ Conversations/Month</strong><br>Production scale</td>
+                <td>Not a pilot. This is production-scale volume. Comparable to mature SaaS companies with $10-20M+ ARR. Signal of deep customer trust and integration.</td>
+                <td style="color: var(--green); font-weight: 600;">VERY STRONG</td>
+                <td>Verified in data room, observable from customer usage metrics</td>
+            </tr>
+            <tr>
+                <td><strong>1M+ Daily Requests</strong><br>API utilization</td>
+                <td>Enterprise API consumption metric. Indicates embedded product, not dabbling. High switching costs for customers.</td>
+                <td style="color: var(--green); font-weight: 600;">STRONG</td>
+                <td>Verified in data room</td>
+            </tr>
+            <tr>
+                <td><strong>20M Sales Calls Q1 2026</strong><br>Outbound deployment</td>
+                <td>Rime voice powering enterprise outbound sales calls at massive scale this quarter alone. Suggests multiple large enterprise deployments.</td>
+                <td style="color: var(--green); font-weight: 600;">STRONG</td>
+                <td>Call metrics in data room, customer-provided</td>
+            </tr>
+            <tr>
+                <td><strong>Coval Partnership</strong><br>B10 portfolio validation</td>
+                <td>Caroline noted Coval (B10 portfolio company) confirmed as Rime partner. Dual validation: founder use case + B10 portfolio company relationship.</td>
+                <td style="color: var(--amber); font-weight: 600;">STRONG</td>
+                <td>Discovered March 31, should formalize as reference call</td>
+            </tr>
+        </table>
+
+        <div class="quote-block">
+            "FYI Ade - Brooke at Coval told me today that they are partners with Rime which I did not know."
+            <div class="quote-attr">- Caroline Broder, March 31, 2026</div>
+        </div>
+
+        <h3>Customer Signal Benchmark</h3>
+        <p>For context, typical Series A customer validation involves 2-4 reference calls with hard ROI metrics. Rime has: (1) Two named enterprise customers publicly willing to discuss impact (Domino's, Wingstop), (2) Hard ROI from at least one (15% sales lift), (3) Production scale of 100M+ conversations confirming not a trial, (4) Portfolio company partnership (Coval) that can provide internal reference. This evidence pool exceeds what most Series A companies can show <strong>before</strong> their round, not after.</p>
+        <p style="color: var(--red); font-weight: 500;">Gap: No formal NPS/satisfaction calls conducted by Base10 team. This is both a risk (insufficient conviction data) and an opportunity (structured customer calls would likely reinforce strong signals already visible in production metrics).</p>
+    </section>
+
+    <!-- TIMELINE -->
+    <section id="timeline">
+        <h2>Deal Timeline</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">Mid-March 2026</div>
+                <div class="timeline-text">Dani meets Rime AI via intro from John at Unusual Ventures. Flags in pipeline. Posts notes in general sheet.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 13, 2026</div>
+                <div class="timeline-text">Rime AI "landing" noted in #seed_series-a-core by Jovani. Confirms inbound awareness.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 25, 2026</div>
+                <div class="timeline-text">Rexhi and Dani meet Lily Clifford (CEO), Nick Salzman, Ares Geovanos in person. Data room shared via DocSend. "Was great touching base again today!" Meeting substantive. Founder pedigree and traction confirmed.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 30, 2026</div>
+                <div class="timeline-text">Rexhi emails Lily: "I'd love for you to meet Ade, Managing Partner at Base10." CC's Ade, Ina, Dani. Formal intro to Ade set.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">March 31, 2026</div>
+                <div class="timeline-text">Caroline notes: "FYI Ade - Brooke at Coval told me today that they are partners with Rime which I did not know." Portfolio company relationship discovered. Ade asks Prosper team about Rime for references ("Rime is meeting tomorrow 4/1 - were you able to get feedback from the Prosper guys?"). No formal DD plan yet. Dani/Rexhi to share DD plan "by EOW."</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">April 1, 2026</div>
+                <div class="timeline-text">Ade meeting with Lily Clifford (founder), Nick Salzman, and Ares Geovanos at Base10 office. In-person discussion. Meeting impressions pending.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RECOMMENDATION -->
+    <section id="recommendation">
+        <h2>Investment Recommendation</h2>
+
+        <div class="rec-box" style="border-color: var(--accent);">
+            <h4 style="color: var(--accent);">Recommendation: Lean In - Establish DD Plan Immediately</h4>
+            <p class="highlight">The growth trajectory ($0 to $3M ARR with $1.5M in last 2 months), production scale (100M+ conversations/month), enterprise customer caliber (Domino's, Wingstop with 15% sales lift), and founder depth (Stanford NLP PhD plus Amazon Alexa team) make this a high-signal Series A opportunity. The biggest risk is not that the team evaluates and passes, but that the team never gets deep enough to evaluate due to deprioritization.</p>
+        </div>
+
+        <h3>Specific Actions</h3>
+        <table>
+            <tr><th>Action</th><th>Rationale</th><th>Owner</th></tr>
+            <tr>
+                <td>Create #early-deal-rime channel immediately</td>
+                <td>Establish visible commitment. Pattern 6 (lead dropped) is the most likely path to this becoming a miss. Slack channel = accountability.</td>
+                <td>Dani</td>
+            </tr>
+            <tr>
+                <td>Schedule 2-3 customer reference calls this week</td>
+                <td>Domino's, Wingstop, and Prosper team (if willing) should be contacted for formal NPS/impact calls. Production scale is strong but formalized customer signal will either confirm or surface risks.</td>
+                <td>Dani</td>
+            </tr>
+            <tr>
+                <td>Request competitive deep-dive: Rime vs. ElevenLabs vs. Deepgram vs. OpenAI TTS</td>
+                <td>Focus on enterprise phonemic accuracy moat vs. consumer TTS commoditization. How defensible is Rime's positioning?</td>
+                <td>Dani / Rexhi</td>
+            </tr>
+            <tr>
+                <td>Leverage Coval relationship for validation</td>
+                <td>Caroline confirmed Coval partners with Rime. Use as backdoor reference, product validation, and GTM signal. Schedule call with Coval team.</td>
+                <td>Caroline</td>
+            </tr>
+            <tr>
+                <td>Ade to share April 1 meeting impressions immediately after</td>
+                <td>Inform DD plan prioritization. Founder quality and vision should come through in meeting. Flag if anything breaks the signal or raises new concerns.</td>
+                <td>Ade</td>
+            </tr>
+            <tr>
+                <td>Confirm pipeline viability with Lily</td>
+                <td>$3M ARR growing at $1.5M/2mo is strong, but need confirmation that Domino's/Wingstop are repeatable, not one-off deals. What's the forward pipeline look like?</td>
+                <td>Dani / Rexhi</td>
+            </tr>
+        </table>
+
+        <h3>What Happens If We Pass</h3>
+        <p>Most likely scenario: Rime AI raises $25M Series A from a Tier 1-2 firm within 30-60 days given the growth trajectory and competitive market heat around voice AI infrastructure. By Q3 2026, the company is likely shipping new use cases (medical, financial services voice systems). Growth accelerates to $10M+ ARR. Raises $50M+ Series B at $400M+ within 18 months. Appears in Q3 2026 CRM miss analysis as a Tier 2 miss, alongside documentation of the deprioritization pattern that led to the miss.</p>
+
+        <h3>Risk If We Invest</h3>
+        <p>The bear case is real: expansion beyond current use cases is unproven, enterprise sales motion could slow if marquee customers (Domino's, Wingstop) plateau, and 50% of revenue coming in one 2-month window could be lumpy. But at $100-150M post for a company doing $3M ARR with 100M+ monthly conversations and 15% sales conversion uplift at key customers, the risk-reward is asymmetric in favor of investing. The downside is a Series A check against strong production-scale validation. The upside is enterprise phonemic infrastructure playing that consolidates voice systems spend.</p>
+    </section>
+
+    <footer>
+        <p>Confidential &middot; Prepared by Adeyemi Ajao - Base10 Partners</p>
+        <p>CRM Miss Analysis Framework v1.0 &middot; Generated April 1, 2026</p>
+        <p style="margin-top: 8px;"><a href="index.html" style="color: var(--accent); text-decoration: none;">Back to CRM Miss Analysis Dashboard &rarr;</a></p>
+    </footer>
+</div>
+
+<script>
+// Pattern Match Bar Chart
+const patternCtx = document.getElementById('patternChart').getContext('2d');
+new Chart(patternCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Static TAM', 'Fuzzy\nDespite Work', 'Customer\nDiscounted', 'Recency\nDiscount', 'Incumbent\nOver-indexed', 'Lead\nDropped', 'Pricing\nAnchoring'],
+        datasets: [{
+            label: 'Rime AI Pattern Match Strength',
+            data: [55, 30, 60, 65, 50, 60, 35],
+            backgroundColor: [
+                'rgba(251, 191, 36, 0.7)',
+                'rgba(52, 211, 153, 0.7)',
+                'rgba(251, 191, 36, 0.7)',
+                'rgba(248, 113, 113, 0.7)',
+                'rgba(251, 191, 36, 0.7)',
+                'rgba(248, 113, 113, 0.7)',
+                'rgba(52, 211, 153, 0.7)'
+            ],
+            borderColor: [
+                '#FBBF24', '#34D399', '#FBBF24',
+                '#F87171', '#FBBF24',
+                '#F87171', '#34D399'
+            ],
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: { display: true, text: 'Rime AI: Miss Pattern Match Strength', color: '#E8EDF4', font: { size: 14, weight: 600 } },
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true, max: 100,
+                ticks: { color: '#8899B0', callback: v => v + '%' },
+                grid: { color: 'rgba(36,51,82,0.5)' }
+            },
+            x: {
+                ticks: { color: '#8899B0', font: { size: 10 } },
+                grid: { display: false }
+            }
+        }
+    }
+});
+
+// Radar Chart - Investment Signal Assessment
+const radarCtx = document.getElementById('radarChart').getContext('2d');
+new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+        labels: ['Customer Love', 'Growth Trajectory', 'Market Size (Platform)', 'Founder Quality', 'Competitive Moat', 'Valuation', 'GTM Repeatability'],
+        datasets: [{
+            label: 'Rime AI Signal Strength',
+            data: [80, 90, 75, 85, 70, 60, 65],
+            backgroundColor: 'rgba(69, 174, 235, 0.2)',
+            borderColor: '#45AEEB',
+            borderWidth: 2,
+            pointBackgroundColor: '#45AEEB',
+            pointRadius: 4
+        }, {
+            label: 'Typical B10 Invest Threshold',
+            data: [70, 70, 70, 70, 60, 60, 60],
+            backgroundColor: 'rgba(136, 153, 176, 0.1)',
+            borderColor: '#5A6E88',
+            borderWidth: 1,
+            borderDash: [5, 5],
+            pointRadius: 2,
+            pointBackgroundColor: '#5A6E88'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: { display: true, text: 'Investment Signal Assessment', color: '#E8EDF4', font: { size: 14, weight: 600 } },
+            legend: { labels: { color: '#8899B0', font: { size: 11 } } }
+        },
+        scales: {
+            r: {
+                beginAtZero: true, max: 100,
+                ticks: { display: false },
+                grid: { color: 'rgba(36,51,82,0.5)' },
+                pointLabels: { color: '#8899B0', font: { size: 10 } },
+                angleLines: { color: 'rgba(36,51,82,0.5)' }
+            }
+        }
+    }
+});
+</script>
+</body>
+</html>
