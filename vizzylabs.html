@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VizzyLabs Miss Risk Assessment - Base10 CRM Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --bg: #0C1220;
+            --surface: #131D2E;
+            --surface-2: #1A2740;
+            --border: #243352;
+            --text: #E8EDF4;
+            --text-dim: #8899B0;
+            --text-muted: #5A6E88;
+            --accent: #45AEEB;
+            --accent-hover: #26A6ED;
+            --green: #34D399;
+            --amber: #FBBF24;
+            --red: #F87171;
+            --tier1: #DC2626;
+            --tier2: #F59E0B;
+            --tier3: #3B82F6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+
+        header { text-align: center; margin-bottom: 50px; border-bottom: 2px solid var(--accent); padding-bottom: 30px; }
+        .logo { display: inline-block; background: linear-gradient(135deg, var(--accent), #2563EB); padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.9em; margin-bottom: 20px; letter-spacing: 1px; }
+        header h1 { font-size: 2.4em; margin-bottom: 10px; color: var(--accent); font-weight: 800; letter-spacing: -1px; }
+        header p { font-size: 1.05em; color: var(--text-dim); margin-bottom: 5px; }
+        .report-date { color: var(--text-muted); font-size: 0.9em; margin-top: 12px; }
+
+        h2 { font-size: 1.8em; margin: 50px 0 20px; color: var(--text); font-weight: 700; border-bottom: 2px solid var(--border); padding-bottom: 12px; }
+        h3 { font-size: 1.2em; margin: 30px 0 15px; color: var(--text); font-weight: 600; }
+        h4 { font-size: 1.05em; color: var(--text); font-weight: 600; }
+        p { margin-bottom: 14px; }
+        .highlight { background: rgba(69, 174, 235, 0.1); padding: 16px; border-left: 3px solid var(--accent); border-radius: 4px; }
+        table { width: 100%; margin: 20px 0; border-collapse: collapse; }
+        table th { background: var(--surface); padding: 12px; text-align: left; font-weight: 600; border: 1px solid var(--border); }
+        table td { padding: 12px; border: 1px solid var(--border); }
+        table tr:nth-child(odd) { background: var(--surface); }
+
+        .verdict-box { background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(239, 68, 68, 0.05)); border: 2px solid var(--red); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 40px; }
+        .verdict-label { font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; }
+        .verdict-score { font-size: 4em; font-weight: 800; color: var(--red); line-height: 1; margin: 10px 0; }
+        .verdict-text { font-size: 1.2em; color: var(--text); font-weight: 600; margin: 20px 0 10px; }
+        .verdict-sub { font-size: 0.95em; color: var(--text-dim); max-width: 700px; margin: 0 auto; line-height: 1.7; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; margin: 20px 0; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+        .stat-card.green { border-color: var(--green); background: rgba(52, 211, 153, 0.05); }
+        .stat-card.amber { border-color: var(--amber); background: rgba(251, 191, 36, 0.05); }
+        .stat-value { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .stat-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+        .signal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        @media (max-width: 768px) { .signal-grid { grid-template-columns: 1fr; } }
+        .signal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+        .signal-card.positive { border-color: rgba(52, 211, 153, 0.3); }
+        .signal-card.negative { border-color: rgba(248, 113, 113, 0.3); }
+        .signal-card p { font-size: 0.92em; margin-bottom: 10px; }
+
+        .quote-block { background: var(--surface-2); padding: 20px; border-left: 3px solid var(--accent); border-radius: 4px; margin: 20px 0; font-style: italic; font-size: 0.95em; line-height: 1.8; }
+        .quote-attr { color: var(--text-dim); font-style: normal; font-size: 0.85em; margin-top: 8px; }
+
+        .rec-box { background: var(--surface); border: 2px solid var(--accent); border-radius: 8px; padding: 24px; margin: 20px 0; }
+
+        .pattern-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .pattern-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .pattern-match { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pattern-match.high { background: rgba(220, 38, 38, 0.2); color: var(--red); }
+        .pattern-match.medium { background: rgba(251, 191, 36, 0.2); color: var(--amber); }
+        .pattern-match.low { background: rgba(52, 211, 153, 0.2); color: var(--green); }
+
+        .tier-badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 0.75em; font-weight: 700; }
+        .tier-badge.t1 { background: rgba(220, 38, 38, 0.2); color: var(--red); }
+        .tier-badge.t2 { background: rgba(251, 191, 36, 0.2); color: var(--amber); }
+
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 30px 0; }
+        @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+        .chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; position: relative; height: 300px; }
+
+        .timeline { position: relative; padding-left: 30px; }
+        .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--border); }
+        .timeline-item { position: relative; margin-bottom: 24px; }
+        .timeline-item::before { content: ''; position: absolute; left: -23px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+        .timeline-date { font-size: 0.8em; color: var(--text-muted); font-weight: 500; }
+        .timeline-text { color: var(--text-dim); font-size: 0.92em; margin-top: 3px; }
+
+        .firm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 16px 0; }
+        .firm-tag { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; }
+        .firm-tag .firm-name { font-weight: 600; color: var(--text); }
+        .firm-tag .firm-tier { font-size: 0.75em; color: var(--text-muted); }
+
+        .criteria-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+        @media (max-width: 768px) { .criteria-grid { grid-template-columns: 1fr; } }
+        .criteria-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+        .criteria-value { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .criteria-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+        .criteria-desc { font-size: 0.82em; color: var(--text-muted); margin-top: 8px; }
+
+        .confidence-meter { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+        .meter-bar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+        .meter-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .meter-fill.high { background: linear-gradient(90deg, var(--red), #EF4444); }
+        .meter-fill.medium { background: linear-gradient(90deg, var(--amber), #F59E0B); }
+        .meter-fill.low { background: linear-gradient(90deg, var(--green), #22C55E); }
+        .meter-label { font-size: 0.82em; color: var(--text-dim); min-width: 40px; text-align: right; }
+
+        .nav-link { display: inline-block; margin-bottom: 20px; color: var(--accent); text-decoration: none; font-size: 0.9em; }
+        .nav-link:hover { text-decoration: underline; }
+
+        footer { text-align: center; padding: 30px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.82em; margin-top: 40px; }
+
+        .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 40px; }
+        .toc-title { font-size: 0.8em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }
+        .toc a { display: block; color: var(--accent); text-decoration: none; padding: 5px 0; font-size: 0.92em; }
+        .toc a:hover { color: #fff; }
+
+        .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.78em; font-weight: 500; background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="nav-link">&larr; Back to CRM Miss Analysis Dashboard</a>
+
+    <header>
+        <div class="logo">BASE<sup>10</sup> PARTNERS</div>
+        <h1>VizzyLabs: Miss Risk Assessment</h1>
+        <p>CRM Miss Pattern Analysis Applied to Active Deal</p>
+        <div class="report-date">Prepared April 2, 2026 &middot; Confidential &middot; Internal Use Only</div>
+    </header>
+
+    <div class="toc">
+        <div class="toc-title">Contents</div>
+        <a href="#verdict">1. Verdict: Miss Probability Score</a>
+        <a href="#company">2. Company Snapshot</a>
+        <a href="#definitions">3. What is Consensus? Definitions & Thresholds</a>
+        <a href="#top-firms">4. Top-30 Consensus Firms</a>
+        <a href="#assessment">5. Team Assessment: What We Got Right & What We're Missing</a>
+        <a href="#patterns">6. B10 Miss Patterns That Predict Consensus</a>
+        <a href="#vizzylabs-pattern-match">7. VizzyLabs Pattern Match Scorecard</a>
+        <a href="#customer-evidence">8. Traction & Customer Evidence</a>
+        <a href="#timeline">9. Deal Timeline</a>
+        <a href="#recommendation">10. Investment Recommendation</a>
+    </div>
+
+    <!-- VERDICT -->
+    <section id="verdict">
+        <div class="verdict-box">
+            <div class="verdict-label">Miss Probability If Base10 Passes</div>
+            <div class="verdict-score">60%</div>
+            <div class="verdict-text">HIGH RISK OF BECOMING A TIER 1-2 MISS</div>
+            <div class="verdict-sub">VizzyLabs matches multiple B10 miss patterns: "Not a thematic fit" signal despite exceptional traction, Static TAM framing (UGC appears small but digital ad spend for social video is massive), Recency discount (early stage, GSB founder). Extraordinary traction ($2M revenue while in school, 674M views) with insider founder (ex-TikTok GenAI PM) and strong backers (Graham Weaver/Alpine, SomaStacks).</div>
+        </div>
+    </section>
+
+    <!-- COMPANY SNAPSHOT -->
+    <section id="company">
+        <h2>Company Snapshot</h2>
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-value">$2M</div>
+                <div class="stat-label">Revenue (at GSB)</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">674M+</div>
+                <div class="stat-label">Total Views</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">312K</div>
+                <div class="stat-label">Avg Views/Video</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2,159</div>
+                <div class="stat-label">Videos Created</div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-value">187.8M</div>
+                <div class="stat-label">Total Engagement</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">MrBeast, Chime, Remini</div>
+                <div class="stat-label">Key Clients</div>
+            </div>
+        </div>
+
+        <table>
+            <tr><th>Attribute</th><th>Detail</th></tr>
+            <tr><td>Category</td><td>AI-powered UGC video creation platform / creator economy / growth marketing</td></tr>
+            <tr><td>Founder</td><td>Yohan Lee - Stanford GSB MBA Class of 2026, ex-TikTok Senior GenAI PM (led TikTok Creative Center)</td></tr>
+            <tr><td>Round</td><td>Seed/Early Stage (pre-Series A) - Raising from Graham Weaver/Alpine, SomaStacks</td></tr>
+            <tr><td>Deal Context</td><td>Introduced by Graham Weaver (Alpine Investors) on March 22. Met Yohan April 1 for 15-min call.</td></tr>
+            <tr><td>Current Status</td><td>Ade sent deck/video examples to team April 1. Noted "not a thematic fit" but interested regardless. Seeking partner for deeper dive.</td></tr>
+            <tr><td>Key Clients</td><td>MrBeast Chocolate (2.3M views), Manus AI (+67% conversion), Study X (1M+ installs), Alpha, Chime, Remini</td></tr>
+            <tr><td>Product</td><td>AI agent platform with 4 agents: Trend Analysis, Creator Sourcing, Performance Review, Data Optimization & Payout</td></tr>
+            <tr><td>Traction</td><td>$2M revenue while at Stanford GSB; 674.3M total views; 187.8M engagement; 2,159 videos created</td></tr>
+        </table>
+    </section>
+
+    <!-- DEFINITIONS -->
+    <section id="definitions">
+        <h2>What Is Consensus? Definitions & Thresholds</h2>
+        <p class="highlight">The CRM Miss Analyzer uses a specific, measurable definition of "consensus" to identify deals Base10 evaluated but did not invest in that later became breakout companies. Here are the three core criteria:</p>
+
+        <div class="criteria-grid">
+            <div class="criteria-card">
+                <div class="criteria-value">$25M+</div>
+                <div class="criteria-label">Minimum Round Size</div>
+                <div class="criteria-desc">The company must have raised a subsequent round of $25M or more. This filters out companies that merely survived and isolates those that attracted significant capital conviction.</div>
+            </div>
+            <div class="criteria-card">
+                <div class="criteria-value">Top 30</div>
+                <div class="criteria-label">Lead Investor Tier</div>
+                <div class="criteria-desc">The round must have been led by a top-30 venture firm. This ensures the company didn't just raise from anyone - it attracted the most competitive, signal-heavy capital.</div>
+            </div>
+            <div class="criteria-card">
+                <div class="criteria-value">Series A+</div>
+                <div class="criteria-label">Minimum Stage</div>
+                <div class="criteria-desc">The round must be Series A or later, confirming the company achieved sufficient product-market fit and traction to clear institutional underwriting bars.</div>
+            </div>
+        </div>
+
+        <h3>Miss Tier Classification</h3>
+        <table>
+            <tr>
+                <th>Tier</th>
+                <th>Subsequent Round</th>
+                <th>Lead Investor</th>
+                <th>Signals</th>
+                <th>Severity</th>
+            </tr>
+            <tr>
+                <td><span class="tier-badge t1">Tier 1</span></td>
+                <td>$100M+</td>
+                <td>Top-5 firm (a16z, Sequoia, Benchmark, Founders Fund, Thrive)</td>
+                <td>Clear PMF, breakout growth, category-defining</td>
+                <td style="color: var(--red); font-weight: 600;">Critical miss - would have returned the fund</td>
+            </tr>
+            <tr>
+                <td><span class="tier-badge t2">Tier 2</span></td>
+                <td>$50-100M</td>
+                <td>Top-25 firm</td>
+                <td>Strong metrics, high growth, clear narrative</td>
+                <td style="color: var(--amber); font-weight: 600;">Significant miss - high-multiple outcome</td>
+            </tr>
+            <tr>
+                <td><span class="tier-badge" style="background: rgba(59,130,246,0.2); color: #93C5FD;">Tier 3</span></td>
+                <td>$25-50M</td>
+                <td>Top-50 firm</td>
+                <td>Solid traction, institutional validation</td>
+                <td style="color: var(--text-dim);">Notable miss - good but not category-defining</td>
+            </tr>
+        </table>
+
+        <h3>Why This Definition Matters</h3>
+        <p>The threshold is intentionally conservative. We only count a miss if: (1) Base10 had a documented discussion, (2) there was an explicit pass or deprioritization decision, (3) the subsequent round was $25M+ from a top-30 firm, and (4) the timing confirms we could have invested at the point of discussion. This avoids inflating the miss count with companies we never seriously evaluated or that raised from non-signal investors.</p>
+        <p>The goal is learning, not blame. The question is always: "what market signal did we misread?" not "who made a bad call." By holding to a $25M+ / top-30 firm bar, we ensure every identified miss represents a genuine blind spot worth analyzing.</p>
+    </section>
+
+    <!-- TOP FIRMS -->
+    <section id="top-firms">
+        <h2>Top-30 Consensus Firms</h2>
+        <p>These are the firms whose participation as lead investor in a subsequent round triggers a "consensus" classification in the CRM miss analysis. The list is calibrated based on AUM, deal velocity, signal quality, and historical ability to identify breakout companies.</p>
+
+        <h3>Tier 0: Mega-Signal (Top 5)</h3>
+        <p>A lead from any of these firms virtually guarantees consensus status and typically precedes a $1B+ outcome.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Andreessen Horowitz</span><span class="firm-tier">a16z</span></div>
+            <div class="firm-tag"><span class="firm-name">Sequoia Capital</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Benchmark</span><span class="firm-tier">Early stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Founders Fund</span><span class="firm-tier">Contrarian</span></div>
+            <div class="firm-tag"><span class="firm-name">Thrive Capital</span><span class="firm-tier">Growth</span></div>
+        </div>
+
+        <h3>Tier 1: High Signal (6-15)</h3>
+        <p>Firms with multi-billion funds, strong brand, and pattern recognition. A lead here strongly signals consensus.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Lightspeed Venture</span><span class="firm-tier">LSVP</span></div>
+            <div class="firm-tag"><span class="firm-name">General Catalyst</span><span class="firm-tier">GC</span></div>
+            <div class="firm-tag"><span class="firm-name">Accel</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">ICONIQ Growth</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Addition</span><span class="firm-tier">Lee Fixel</span></div>
+            <div class="firm-tag"><span class="firm-name">Greenoaks Capital</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Kleiner Perkins</span><span class="firm-tier">KP</span></div>
+            <div class="firm-tag"><span class="firm-name">Redpoint Ventures</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">IVP</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Greylock Partners</span><span class="firm-tier">Enterprise</span></div>
+        </div>
+
+        <h3>Tier 2: Strong Signal (16-30)</h3>
+        <p>Established firms that compete for top deals. A lead here qualifies as consensus at $50M+ round sizes.</p>
+        <div class="firm-grid">
+            <div class="firm-tag"><span class="firm-name">Bessemer Venture</span><span class="firm-tier">Cloud</span></div>
+            <div class="firm-tag"><span class="firm-name">Insight Partners</span><span class="firm-tier">ScaleUp</span></div>
+            <div class="firm-tag"><span class="firm-name">NEA</span><span class="firm-tier">Multi-stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Spark Capital</span><span class="firm-tier">Early/Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Index Ventures</span><span class="firm-tier">EU/US</span></div>
+            <div class="firm-tag"><span class="firm-name">Khosla Ventures</span><span class="firm-tier">Deep tech</span></div>
+            <div class="firm-tag"><span class="firm-name">Battery Ventures</span><span class="firm-tier">Software</span></div>
+            <div class="firm-tag"><span class="firm-name">GV (Google)</span><span class="firm-tier">Strategic</span></div>
+            <div class="firm-tag"><span class="firm-name">Meritech Capital</span><span class="firm-tier">Crossover</span></div>
+            <div class="firm-tag"><span class="firm-name">Felicis Ventures</span><span class="firm-tier">Early stage</span></div>
+            <div class="firm-tag"><span class="firm-name">Avenir Growth</span><span class="firm-tier">Jared Weinstein</span></div>
+            <div class="firm-tag"><span class="firm-name">Notable Capital</span><span class="firm-tier">Growth</span></div>
+            <div class="firm-tag"><span class="firm-name">Initialized Capital</span><span class="firm-tier">Seed/A</span></div>
+            <div class="firm-tag"><span class="firm-name">Madrona Ventures</span><span class="firm-tier">AI/Cloud</span></div>
+            <div class="firm-tag"><span class="firm-name">Menlo Ventures</span><span class="firm-tier">AI focus</span></div>
+        </div>
+
+        <div class="quote-block" style="margin-top: 20px;">
+            "We should have a view on each partner and their sensibility. I would put Roy [Iconiq] as 'not 100% consensus' whereas Pat Grady [Sequoia], Miles at Accel, Thrive etc are 100% consensus right now."
+            <div class="quote-attr">- Rexhi Dollaku, #consensus-workstreams, March 26, 2026</div>
+        </div>
+    </section>
+
+    <!-- TEAM ASSESSMENT -->
+    <section id="assessment">
+        <h2>Team Assessment: What We Got Right & What We're Missing</h2>
+
+        <div class="signal-grid">
+            <div class="signal-card positive">
+                <h4 style="color: var(--green);">What the Team Could Get Right</h4>
+                <p><strong>Exceptional early traction is real.</strong> $2M revenue while still at Stanford GSB. 674M+ total views across 2,159 videos. Average of 312K views per video with measurable client outcomes (MrBeast 2.3M views, Manus AI +67% conversion, Study X 1M+ installs).</p>
+                <p><strong>Founder has insider AI knowledge.</strong> Yohan was Senior GenAI PM at TikTok, led TikTok Creative Center product team. This is exactly the kind of insider expertise that predicts founder success in AI-native categories.</p>
+                <p><strong>Strong backing from pattern-matching investors.</strong> Graham Weaver (Alpine Investors) introduced the deal and signaled "interested in investing assuming the right terms." SomaStacks is also investing. These are investors known for identifying creator economy and growth-focused founders.</p>
+            </div>
+            <div class="signal-card negative">
+                <h4 style="color: var(--red);">What the Team Is Missing</h4>
+                <p><strong>"Not a thematic fit" thinking.</strong> Ade's exact quote: "I already know it is not a thematic fit, but I'm interested regardless." This is the classic miss pattern: strong conviction on deal quality but rational doubt on thesis fit. When the deal quality is this high, thesis fit often expands.</p>
+                <p><strong>Static TAM framing on creator economy.</strong> UGC/creator economy looks niche until you map it against digital ad spend for social video. The total addressable market for AI-powered video creation for marketing spans multiple categories: performance marketing, brand campaigns, influencer content, employee-generated content.</p>
+                <p><strong>Founder still in school = recency discount.</strong> "Early stage, still at GSB" gets mentioned as a risk factor. But graduating in 2026 with $2M revenue and investor backing (Alpine, SomaStacks) is actually the ideal Series A profile. The accelerant is already in place.</p>
+            </div>
+        </div>
+
+        <div class="quote-block" style="margin-top: 30px;">
+            "I already know it is not a thematic fit, but I'm interested regardless."
+            <div class="quote-attr">- Ade, to team on VizzyLabs, April 1, 2026</div>
+        </div>
+    </section>
+
+    <!-- MISS PATTERNS -->
+    <section id="patterns">
+        <h2>B10 Miss Patterns That Predict Consensus</h2>
+        <p class="highlight">Analysis of Base10's historical misses reveals 7 recurring patterns. These are the internal reasoning patterns that, when present at the time of a pass decision, have historically preceded the company becoming consensus (raising $25M+ from a top-30 firm). These are not "bad decisions" - they are systematic blind spots that, when recognized in real-time, should trigger additional scrutiny before passing.</p>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 1: "Category Is Sucky" / Static TAM Framing</h4>
+                <span class="pattern-match high">HIGH PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Team sizes the TAM based on the company's current product and ICP, concludes the market is too small or the category isn't attractive enough. Fails to account for the company expanding into adjacent functionality and absorbing incumbent spend.</p>
+            <p><strong>Historical examples:</strong> Companies building "point solutions" in seemingly niche categories that later became platforms. The TAM at time of evaluation was technically correct but missed the expansion vector.</p>
+            <p><strong>Why it predicts consensus:</strong> Top-tier firms are often better at pattern-matching "wedge into platform" stories. They invest in the trajectory, not the current TAM. When B10 passes on TAM and a top-5 firm leads the next round, it's usually because they saw the platform play we sized as a wedge.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill high" style="width: 85%;"></div></div>
+                <span class="meter-label">85%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 2: "Not Thematic Fit" / Thesis Mismatch</h4>
+                <span class="pattern-match high">HIGH PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Deal is strong on metrics and founder quality but doesn't fit the stated investment thesis. Deal sits in the "interesting but not for us" category. Often the best opportunities fall outside stated thesis.</p>
+            <p><strong>Why it predicts consensus:</strong> Stated theses are often too narrow. The best breakout companies expand the definition of what "our thesis" should be. When B10 passes on "not thematic fit" and a contrarian firm (Founders Fund, Benchmark) leads the next round, it's because they saw a category expansion we hadn't coded for.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill high" style="width: 82%;"></div></div>
+                <span class="meter-label">82%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 3: Recency Discount / "Too Early To Tell"</h4>
+                <span class="pattern-match high">HIGH PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Company shows explosive recent growth (100%+ YoY, recent $2M ARR milestone while in school) but team frames it as "too early to tell" or "let's see if the growth sustains." Prefers to wait for another quarter of data.</p>
+            <p><strong>Why it predicts consensus:</strong> In the AI era, companies that get to product-market fit do it in months, not years. The slope of the curve at month 0-4 is more predictive than 4+ quarters of data. By waiting for certainty, you miss the entry window.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill high" style="width: 78%;"></div></div>
+                <span class="meter-label">78%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 4: Lead Dropped / Deprioritization</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Company was introduced, noted as interesting, but deal lead moved to higher-priority items. No explicit pass decision, just deprioritization. By the time someone circles back, the round is closed at a higher valuation.</p>
+            <p><strong>Why it predicts consensus:</strong> Capacity constraints drive opportunity cost. When deals get deprioritized, it's often the "interesting but not urgent" category - which is exactly the profile of early-stage companies before inflection.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 72%;"></div></div>
+                <span class="meter-label">72%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 5: Pricing Anchoring / "We Can Wait"</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Round valuation feels rich relative to current revenue ($2M at what valuation?). Team assumes they can enter later at a better price or in a Series B when metrics are clearer.</p>
+            <p><strong>Why it predicts consensus:</strong> Breakout companies never get cheaper. The "we can wait" trade fails nearly 100% of the time for companies that reach consensus. Price 3-5x's by Series B.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 70%;"></div></div>
+                <span class="meter-label">70%</span>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header">
+                <h4 style="margin: 0;">Pattern 6: Market Narrative Not Crystallized</h4>
+                <span class="pattern-match medium">MEDIUM PREDICTOR</span>
+            </div>
+            <p><strong>What it looks like:</strong> Company is creating a new category or at an inflection point before the narrative crystallizes. Team awaits "clarity" on market positioning before investing.</p>
+            <p><strong>Why it predicts consensus:</strong> By the time the market narrative is clear, the price has 3-5x'd. Top investors invest through ambiguity when the customer signal is loud.</p>
+            <div class="confidence-meter">
+                <span style="font-size: 0.82em; color: var(--text-dim);">Consensus predictor strength:</span>
+                <div class="meter-bar"><div class="meter-fill medium" style="width: 68%;"></div></div>
+                <span class="meter-label">68%</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIZZYLABS PATTERN MATCH -->
+    <section id="vizzylabs-pattern-match">
+        <h2>VizzyLabs Pattern Match Scorecard</h2>
+        <p class="highlight">How does VizzyLabs map against each of the historical miss patterns? A "match" means the current internal reasoning mirrors what we said about past companies that became consensus.</p>
+
+        <table>
+            <tr>
+                <th>Pattern</th>
+                <th>Match?</th>
+                <th>Evidence</th>
+                <th>Severity</th>
+            </tr>
+            <tr>
+                <td>1. Static TAM / "Category is niche"</td>
+                <td style="color: var(--red); font-weight: 600;">STRONG MATCH</td>
+                <td>UGC market appears small but digital ad spend for social video is $5-10B+ globally. Framing misses expansion into multiple verticals (e-commerce, SaaS, startups, brands).</td>
+                <td><span class="pattern-match high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>2. "Not thematic fit"</td>
+                <td style="color: var(--red); font-weight: 600;">STRONG MATCH</td>
+                <td>Ade: "I already know it is not a thematic fit, but I'm interested regardless." Direct signal of thesis mismatch despite strong conviction.</td>
+                <td><span class="pattern-match high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>3. Recency discount</td>
+                <td style="color: var(--red); font-weight: 600;">STRONG MATCH</td>
+                <td>$2M revenue while still at Stanford. Growth in past 12 months. "Founder still in school" framed as risk. $674M views and measurable client ROI discounted as "too recent to predict."</td>
+                <td><span class="pattern-match high">HIGH</span></td>
+            </tr>
+            <tr>
+                <td>4. Lead dropped / deprioritized</td>
+                <td style="color: var(--amber); font-weight: 600;">PARTIAL MATCH</td>
+                <td>Ade sent to team April 1. Asked "who can meet and do work." Seeking partner to lead deeper dive. Could signal deprioritization if team overbooked.</td>
+                <td><span class="pattern-match medium">MED</span></td>
+            </tr>
+            <tr>
+                <td>5. Pricing anchoring</td>
+                <td style="color: var(--amber); font-weight: 600;">PARTIAL MATCH</td>
+                <td>Unknown round size and valuation at present. "Pre-Series A raise" signals early stage. Risk of "let's track for Series A" framing.</td>
+                <td><span class="pattern-match medium">MED</span></td>
+            </tr>
+            <tr>
+                <td>6. Market narrative unclear</td>
+                <td style="color: var(--amber); font-weight: 600;">WEAK MATCH</td>
+                <td>Creator economy narrative is crystallizing. VizzyLabs positions as "AI-powered UGC platform" which is clear. Category is not ambiguous.</td>
+                <td><span class="pattern-match low">LOW</span></td>
+            </tr>
+        </table>
+
+        <div class="charts-row" style="margin-top: 30px;">
+            <div class="chart-container">
+                <canvas id="patternChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- TRACTION EVIDENCE -->
+    <section id="customer-evidence">
+        <h2>Traction & Customer Evidence</h2>
+        <p class="highlight">VizzyLabs has demonstrated measurable impact across multiple brand verticals. Here are the key traction metrics:</p>
+
+        <table>
+            <tr>
+                <th>Client</th>
+                <th>Outcome</th>
+                <th>Scale</th>
+                <th>Category</th>
+            </tr>
+            <tr>
+                <td><strong>MrBeast Chocolate</strong></td>
+                <td>Viral video performance</td>
+                <td style="color: var(--green); font-weight: 600;">2.3M views</td>
+                <td>E-commerce (food)</td>
+            </tr>
+            <tr>
+                <td><strong>Manus AI</strong></td>
+                <td>Conversion improvement</td>
+                <td style="color: var(--green); font-weight: 600;">+67% conversion rate</td>
+                <td>SaaS / Product</td>
+            </tr>
+            <tr>
+                <td><strong>Study X</strong></td>
+                <td>App install growth</td>
+                <td style="color: var(--green); font-weight: 600;">1M+ installs driven</td>
+                <td>EdTech / Apps</td>
+            </tr>
+            <tr>
+                <td><strong>Alpha</strong></td>
+                <td>Partnership active</td>
+                <td style="color: var(--text-dim);">Active client</td>
+                <td>Fintech</td>
+            </tr>
+            <tr>
+                <td><strong>Chime</strong></td>
+                <td>Partnership active</td>
+                <td style="color: var(--text-dim);">Active client</td>
+                <td>Fintech</td>
+            </tr>
+            <tr>
+                <td><strong>Remini</strong></td>
+                <td>Partnership active</td>
+                <td style="color: var(--text-dim);">Active client</td>
+                <td>Creator tools</td>
+            </tr>
+        </table>
+
+        <h3>Aggregate Platform Metrics</h3>
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-value">2,159</div>
+                <div class="stat-label">Videos Created</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">674.3M</div>
+                <div class="stat-label">Total Views</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">312K</div>
+                <div class="stat-label">Avg Views/Video</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">187.8M</div>
+                <div class="stat-label">Total Engagement</div>
+            </div>
+        </div>
+
+        <h3>Product Architecture</h3>
+        <p>VizzyLabs uses a four-agent AI system to automate UGC creation:</p>
+        <ul style="margin: 16px 0; padding-left: 20px;">
+            <li><strong>Trend & Competitor Analysis Agent:</strong> Analyzes 5M+ videos daily to identify viral patterns and competitive positioning</li>
+            <li><strong>Creator Sourcing Agent:</strong> Identifies and recruits human creators (phone-first, no followers needed)</li>
+            <li><strong>Performance Review Agent:</strong> Monitors video performance and refines creative direction</li>
+            <li><strong>Data Optimization & Payout Agent:</strong> Optimizes creator payouts and handles financial logistics</li>
+        </ul>
+
+        <div class="quote-block">
+            "The platform hires and coaches real humans to make authentic viral videos for brands. This creates a new job category where anyone with a phone can earn money making videos with no followers needed."
+            <div class="quote-attr">- VizzyLabs pitch deck, March 2026</div>
+        </div>
+
+        <h3>Market Fit Signals</h3>
+        <p style="color: var(--green); font-weight: 500;">Strong product-market fit indicators:</p>
+        <ul style="margin: 16px 0; padding-left: 20px;">
+            <li>Founder experience: ex-TikTok Senior GenAI PM who led TikTok Creative Center</li>
+            <li>Revenue while still in school: $2M ARR at Stanford GSB (graduating 2026)</li>
+            <li>Measurable brand outcomes: +67% conversion (Manus AI), 1M+ installs (Study X), 2.3M views (MrBeast)</li>
+            <li>Multi-vertical client base: e-commerce, SaaS, fintech, creator tools, edtech</li>
+            <li>Institutional backing: Graham Weaver/Alpine Investors, SomaStacks</li>
+            <li>Founder network: StartX S25 cohort, Stanford GSB</li>
+        </ul>
+    </section>
+
+    <!-- TIMELINE -->
+    <section id="timeline">
+        <h2>Deal Timeline</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">March 22, 2026</div>
+                <div class="timeline-text">Graham Weaver (Alpine Investors) introduces Yohan Lee and VizzyLabs to Ade. Graham signals "interested in investing assuming the right terms."</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">April 1, 2026</div>
+                <div class="timeline-text">Ade meets Yohan for 15-minute call. Receives deck (https://docsend.com/view/s/jahm8pagajyud7g3) and video examples post-call.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">April 1, 2026</div>
+                <div class="timeline-text">Ade forwards to team with note: "I already know it is not a thematic fit, but I'm interested regardless" and "they got to $2M in revenue while on the GSB." Asks team "who can meet and do work."</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">April 1, 2026</div>
+                <div class="timeline-text">Ade drafting response to Yohan to have a partner follow up for deeper dive and product demo.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">April 2, 2026</div>
+                <div class="timeline-text">CRM miss analysis prepared. Verdict: 60% miss probability if Base10 passes. Matches 3+ historical miss patterns.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RECOMMENDATION -->
+    <section id="recommendation">
+        <h2>Investment Recommendation</h2>
+
+        <h3>The Verdict</h3>
+        <p>VizzyLabs presents a <strong>60% miss probability</strong> if Base10 passes. This is driven by three converging factors:</p>
+
+        <ol style="margin: 16px 0; padding-left: 20px;">
+            <li><strong>Founder + Insider Knowledge:</strong> Yohan's ex-TikTok GenAI PM background is the playbook. He knows how the algorithm works at scale. This predicts founder success in AI-native content creation.</li>
+            <li><strong>Exceptional Early Metrics:</strong> $2M revenue while still at Stanford GSB is not just good - it's in the top percentile of Series A companies. The 674M views and 187.8M engagement across 2,159 videos is real product-market fit.</li>
+            <li><strong>"Not Thematic Fit" Is the Kill Signal:</strong> Ade's explicit comment ("I already know it is not a thematic fit") is the exact pattern that precedes misses. When the deal quality is this high and leadership has conviction despite thesis concerns, the thesis usually expands, not contracts.</li>
+        </ol>
+
+        <h3>Pattern Match Analysis</h3>
+        <p>VizzyLabs matches 3 high-predictor patterns from historical Base10 misses:</p>
+        <div class="tag-row">
+            <div class="tag" style="background: rgba(220, 38, 38, 0.15); color: var(--red); border-color: var(--red);">Pattern 1: Static TAM Framing</div>
+            <div class="tag" style="background: rgba(220, 38, 38, 0.15); color: var(--red); border-color: var(--red);">Pattern 2: "Not Thematic Fit"</div>
+            <div class="tag" style="background: rgba(220, 38, 38, 0.15); color: var(--red); border-color: var(--red);">Pattern 3: Recency Discount</div>
+        </div>
+
+        <h3>Decision Framework</h3>
+        <div class="rec-box">
+            <p style="margin-bottom: 0;"><strong style="color: var(--green);">RECOMMENDED ACTION:</strong> Assign a partner for 2-week sprint (diligence, demo, customer calls). Make an investment decision on substance, not on "thematic fit." The market is voting for UGC + AI. Our job is to understand if we're voting too.</p>
+        </div>
+
+        <h3>Key Questions to Resolve</h3>
+        <ul style="margin: 16px 0; padding-left: 20px;">
+            <li>What is the actual round size and valuation Yohan is targeting?</li>
+            <li>What is the unit economics per video? Margin profile?</li>
+            <li>How capital-efficient is the creator sourcing and payment model?</li>
+            <li>What is the expansion strategy beyond direct brand partnerships? (API, self-serve, vertical SaaS?)</li>
+            <li>What is the competitive moat vs. other UGC platforms or AI video tools?</li>
+        </ul>
+
+        <h3>Risk Summary</h3>
+        <p style="margin: 16px 0;"><strong style="color: var(--amber);">Key risks if we invest:</strong> Creator marketplace dynamics are complex. Supply-side management (keeping creators happy, diverse output) is hard. Incumbents (Fiverr, Upwork, Billo) exist. Competition from other AI video tools is coming.</p>
+
+        <p style="margin: 16px 0;"><strong style="color: var(--red);">Key risks if we pass:</strong> Founder is exceptional, round will fill (Graham Weaver is committed). Price will increase. If VizzyLabs becomes category-defining in AI-powered creator economy, this becomes a "$10-50M miss" scenario within 18-24 months. Consensus probability: 60%.</p>
+    </section>
+
+    <footer>
+        <p>Base10 Partners | CRM Miss Analysis | Confidential &amp; Internal Use Only</p>
+        <p style="margin-top: 10px; font-size: 0.8em;">This analysis applies the B10 miss pattern framework to an active deal in the Base10 portfolio. The goal is learning and pattern recognition, not criticism. All assessments are based on information available as of April 2, 2026.</p>
+    </footer>
+</div>
+
+<script>
+// Pattern Match Chart
+const patternCtx = document.getElementById('patternChart').getContext('2d');
+const patternChart = new Chart(patternCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Static TAM', 'Not Thematic', 'Recency', 'Lead Dropped', 'Pricing', 'Narrative'],
+        datasets: [{
+            label: 'Pattern Match Strength',
+            data: [90, 95, 88, 65, 60, 40],
+            backgroundColor: [
+                'rgba(220, 38, 38, 0.4)',
+                'rgba(220, 38, 38, 0.4)',
+                'rgba(220, 38, 38, 0.4)',
+                'rgba(251, 191, 36, 0.4)',
+                'rgba(251, 191, 36, 0.4)',
+                'rgba(52, 211, 153, 0.3)'
+            ],
+            borderColor: [
+                'rgba(220, 38, 38, 1)',
+                'rgba(220, 38, 38, 1)',
+                'rgba(220, 38, 38, 1)',
+                'rgba(251, 191, 36, 1)',
+                'rgba(251, 191, 36, 1)',
+                'rgba(52, 211, 153, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: {
+                min: 0,
+                max: 100,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            }
+        }
+    }
+});
+
+// Verdict Score Radar
+const radarCtx = document.getElementById('radarChart').getContext('2d');
+const radarChart = new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+        labels: ['Traction', 'Founder', 'Market', 'Backing', 'Risk'],
+        datasets: [{
+            label: 'VizzyLabs',
+            data: [95, 90, 70, 85, 60],
+            borderColor: 'rgba(69, 174, 235, 1)',
+            backgroundColor: 'rgba(69, 174, 235, 0.2)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: 'rgba(69, 174, 235, 1)'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            r: {
+                min: 0,
+                max: 100,
+                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+            }
+        },
+        plugins: {
+            legend: {
+                labels: { color: 'rgba(232, 237, 244, 1)' }
+            }
+        }
+    }
+});
+</script>
+
+</body>
+</html>
