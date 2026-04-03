@@ -1,0 +1,321 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Duranta Series A Consensus Probability - Base10</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script><style>
+:root{--bg:#0C1220;--surface:#131D2E;--surface-2:#1A2740;--border:#243352;--text:#E8EDF4;--text-dim:#8899B0;--text-muted:#5A6E88;--accent:#45AEEB;--accent-hover:#26A6ED;--green:#34D399;--amber:#FBBF24;--red:#F87171;--tier1:#DC2626;--tier2:#F59E0B;--tier3:#3B82F6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+.container{max-width:1100px;margin:0 auto;padding:40px 32px}
+header{text-align:center;margin-bottom:50px;border-bottom:2px solid var(--accent);padding-bottom:30px}
+.logo{display:inline-block;background:linear-gradient(135deg,var(--accent),#6366F1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:0.85em;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+h1{font-size:1.8em;font-weight:700;margin-bottom:4px}
+.subtitle{color:var(--text-dim);font-size:0.95em}
+.meta{color:var(--text-muted);font-size:0.8em;margin-top:8px}
+.back-link{display:inline-block;margin-bottom:20px;color:var(--accent);text-decoration:none;font-size:0.9em}
+.back-link:hover{color:var(--accent-hover)}
+section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:24px}
+h2{font-size:1.25em;font-weight:700;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--accent)}
+h3{font-size:1.05em;font-weight:600;margin:16px 0 8px;color:var(--text)}
+p{margin-bottom:12px;color:var(--text-dim);font-size:0.92em}
+.verdict{text-align:center;padding:40px 28px}
+.score{font-size:4em;font-weight:700;color:var(--green);margin-bottom:8px}
+.score-label{font-size:1.1em;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.verdict-text{max-width:700px;margin:0 auto;color:var(--text-dim);font-size:0.95em;line-height:1.7}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:20px 0}
+.stat-card{background:var(--surface-2);border-radius:8px;padding:16px;text-align:center}
+.stat-value{font-size:1.5em;font-weight:700;color:var(--accent)}
+.stat-label{font-size:0.78em;color:var(--text-muted);margin-top:4px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:0.85em}
+th{background:var(--surface-2);color:var(--text-dim);font-weight:600;text-align:left;padding:10px 12px;border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-dim)}
+tr:hover td{background:rgba(69,174,235,0.05)}
+.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.75em;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+.badge.green{background:rgba(52,211,153,0.2);color:#A7F3D0}
+.badge.amber{background:rgba(251,191,36,0.2);color:#FED7AA}
+.badge.red{background:rgba(220,38,38,0.2);color:#FCA5A5}
+.badge.blue{background:rgba(69,174,235,0.2);color:#93C5FD}
+.badge.t1{background:rgba(220,38,38,0.15);color:#FCA5A5;border:1px solid rgba(220,38,38,0.3)}
+.badge.t2{background:rgba(245,158,11,0.15);color:#FED7AA;border:1px solid rgba(245,158,11,0.3)}
+.chart-container{position:relative;height:300px;margin:16px 0}
+.chart-sm{height:220px}
+.toc{columns:2;column-gap:24px}
+.toc a{display:block;color:var(--text-dim);text-decoration:none;padding:4px 0;font-size:0.88em}
+.toc a:hover{color:var(--accent)}
+.investor-card{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:14px}
+.investor-card h3{margin-top:0;color:var(--accent);display:flex;align-items:center;gap:8px}
+.investor-meta{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0;font-size:0.82em}
+.investor-meta span{color:var(--text-muted)}
+.investor-meta strong{color:var(--text-dim)}
+.rec{padding:8px 12px;border-radius:6px;font-size:0.82em;margin-top:8px;font-weight:500}
+.rec.high{background:rgba(52,211,153,0.1);border-left:3px solid var(--green);color:#A7F3D0}
+.rec.med{background:rgba(251,191,36,0.1);border-left:3px solid var(--amber);color:#FED7AA}
+.rec.low{background:rgba(220,38,38,0.1);border-left:3px solid var(--red);color:#FCA5A5}
+.gauge-wrap{display:flex;justify-content:center;margin:20px 0}
+.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.risk-grid,.stats-grid{grid-template-columns:1fr}.toc{columns:1}}
+.footer{text-align:center;padding:30px;color:var(--text-muted);font-size:0.8em;border-top:1px solid var(--border);margin-top:40px}
+</style></head><body><div class="container">
+<a href="index.html" class="back-link">â Back to CRM Analysis Dashboard</a>
+<header><div class="logo">BASE10 PARTNERS</div><h1>Duranta: Series A Consensus Probability</h1><div class="subtitle">Partnership Approval Likelihood Analysis</div><div class="meta">Prepared April 2, 2026 Â· Confidential Â· Internal Use Only</div></header>
+
+<nav><section><h2>Contents</h2><div class="toc">
+<a href="#verdict">1. Consensus Probability Score</a>
+<a href="#snapshot">2. Company Snapshot</a>
+<a href="#market">3. Market Opportunity</a>
+<a href="#team">4. Team Assessment</a>
+<a href="#thesis">5. Base10 Thesis Fit</a>
+<a href="#competitive">6. Competitive Landscape</a>
+<a href="#risks">7. Key Risks &amp; Mitigants</a>
+<a href="#investors">8. Investor Deep Dive (CRM)</a>
+<a href="#additional">9. Additional Investor Recommendations</a>
+<a href="#recommendation">10. Investment Recommendation</a>
+</div></section></nav>
+
+<section id="verdict" class="verdict">
+<h2 style="border:none;text-align:center">Consensus Probability</h2>
+<div class="score">78%</div>
+<div class="score-label">HIGH PROBABILITY OF PARTNERSHIP APPROVAL</div>
+<p class="verdict-text">Duranta is a high-conviction, thesis-aligned investment led by an elite repeat founder (Sam Adeyemo: Aurora Solar, $0â$100M ARR, $4B EV). The company is building the world's fastest vision foundation model for geospatial data â a category with massive TAM across insurance, property maintenance, retail, and energy. $40M raise with Base10 leading positions us in a category-defining infrastructure play. Strong founder-market fit, active customer pipeline (250K-image property maintenance deal closing), and Lowe's/Home Depot agentic commerce opportunity provide multiple vectors for breakout growth.</p>
+<div class="gauge-wrap"><canvas id="gaugeChart" width="300" height="180"></canvas></div>
+</section>
+
+<section id="snapshot">
+<h2>Company Snapshot</h2>
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-value">$90K</div><div class="stat-label">Current ARR (Jan 2026)</div></div>
+<div class="stat-card"><div class="stat-value">$40M</div><div class="stat-label">Series A Target Raise</div></div>
+<div class="stat-card"><div class="stat-value">16mo</div><div class="stat-label">Runway Remaining</div></div>
+<div class="stat-card"><div class="stat-value">Fund III</div><div class="stat-label">Base10 Investment Vehicle</div></div>
+</div>
+<table><tr><th>Attribute</th><th>Detail</th></tr>
+<tr><td>Company</td><td>Duranta (getduranta.com) â "The world's fastest and most accurate vision foundation model for geospatial data"</td></tr>
+<tr><td>Product</td><td>AI model "Aidan" â input a zip code, get pixel-accurate digital twin in seconds. Applications across landscaping, insurance, property maintenance, retail, energy</td></tr>
+<tr><td>Founder</td><td>Samuel Adeyemo (CEO) â Co-founder/COO of Aurora Solar ($0â$100M ARR, $4B EV). Stanford MSc + MBA</td></tr>
+<tr><td>Blurb</td><td>Duranta is transforming how foundational industries quantify, analyze and interact with the physical world</td></tr>
+<tr><td>Round</td><td>Series A â $40M raise, Sam in SF WedâFri Apr 8-10 for in-person meetings</td></tr>
+<tr><td>Deal Team</td><td>Ade (lead), Caroline Broder, Rexhi Dollaku, Ina Rasted</td></tr>
+<tr><td>Base10 History</td><td>Seed investor via Fund III (entry Apr 2024). Also invested in Aurora Solar previously</td></tr>
+<tr><td>Traction</td><td>$90K ARR ($60K enterprise, $30K SMB). Property maintenance deal for ~250K images closing. Lowe's pilot ($400K-$1M). Home Depot in early conversations</td></tr>
+</table></section>
+
+<section id="market">
+<h2>Market Opportunity</h2>
+<p>Duranta sits at the intersection of foundation models and physical-world intelligence â a massive emerging category. The initial wedge in landscaping proved model accuracy and gained real-world validation, but the real opportunity is orders of magnitude larger.</p>
+<div class="chart-container chart-sm"><canvas id="tamChart"></canvas></div>
+<h3>Addressable Verticals</h3>
+<table><tr><th>Vertical</th><th>Use Case</th><th>TAM Signal</th><th>Status</th></tr>
+<tr><td>Property Maintenance</td><td>Automated site measurement from imagery (250K images)</td><td>$10B+</td><td><span class="badge green">Deal Closing</span></td></tr>
+<tr><td>Retail / Agentic Commerce</td><td>AI checkout kiosks (Lowe's garden section)</td><td>$5B+</td><td><span class="badge amber">Pilot Stage</span></td></tr>
+<tr><td>Insurance</td><td>Property risk assessment, exposure quantification</td><td>$15B+</td><td><span class="badge blue">Early Pipeline</span></td></tr>
+<tr><td>Landscaping (SMB + Enterprise)</td><td>Automated takeoff, estimation, bidding</td><td>$3B+</td><td><span class="badge green">Live ($90K ARR)</span></td></tr>
+<tr><td>Clean Energy / Solar</td><td>Site assessment, panel optimization</td><td>$8B+</td><td><span class="badge blue">Future</span></td></tr>
+</table>
+<p>The key insight (per Ade's feedback): "We happened to start testing with Landscapers because it was a great way to get fast real-world validation... they love it, but we don't even care. The prize is huge â if we think big and the claim is true, who will pay the most for this in the world?"</p>
+</section>
+
+<section id="team">
+<h2>Team Assessment</h2>
+<p>Sam Adeyemo is an "11/10 founder" (per Ade's draft to Martin Casado at a16z). He took Aurora Solar from $0 to $100M ARR and a $4B enterprise value. Stanford MSc + MBA. He's now applying the same playbook â geospatial AI for physical-world industries â but with a more ambitious foundation model approach rather than a single-vertical SaaS tool.</p>
+<h3>Founder Strengths</h3>
+<table><tr><th>Dimension</th><th>Assessment</th></tr>
+<tr><td>Track Record</td><td><span class="badge green">Exceptional</span> â Aurora Solar co-founder/COO, $0â$100M ARR, $4B EV</td></tr>
+<tr><td>Domain Expertise</td><td><span class="badge green">Deep</span> â Built the leading solar design platform; understands geospatial + physical world AI intimately</td></tr>
+<tr><td>Fundraising Ability</td><td><span class="badge green">Strong</span> â Previously raised at scale; personal network includes Stripe (Patrick Collison), Eclipse (Charly), a16z</td></tr>
+<tr><td>Intensity</td><td><span class="badge green">Very High</span> â "20-hour workdays," opened NY office mandating 5 days in-office, aggressive deal-closing</td></tr>
+<tr><td>Coachability</td><td><span class="badge amber">Moderate</span> â Pushed Ade to email Patrick Collison prematurely; sometimes overreaches on outbound. But responsive to Caroline's deck feedback</td></tr>
+</table>
+<p>Caroline's assessment: "This is obviously one of the most important parts of the story â we built this before for one market, we are rebuilding the foundation, I got all the best people. They see the big picture and want to build it with me."</p>
+</section>
+
+<section id="thesis">
+<h2>Base10 Thesis Fit: "Automation of the Real Economy"</h2>
+<div class="chart-container chart-sm"><canvas id="radarChart"></canvas></div>
+<table><tr><th>Thesis Dimension</th><th>Fit</th><th>Evidence</th></tr>
+<tr><td>Real Economy Focus</td><td><span class="badge green">Perfect</span></td><td>Landscaping, property maintenance, insurance, retail â these are foundational industries</td></tr>
+<tr><td>AI-Native Product</td><td><span class="badge green">Strong</span></td><td>Vision foundation model ("Aidan") is the core product â not AI-enhanced SaaS but AI-first infrastructure</td></tr>
+<tr><td>Platform Potential</td><td><span class="badge green">High</span></td><td>Single model serves multiple verticals. "Input zip code â pixel-accurate digital twin" is horizontal infrastructure</td></tr>
+<tr><td>Business-in-a-Box</td><td><span class="badge amber">Adjacent</span></td><td>Enables businesses to automate estimation/pricing â adjacent to BiB thesis through the "agentic commerce" angle</td></tr>
+<tr><td>Existing Portfolio Synergy</td><td><span class="badge green">Direct</span></td><td>Base10 invested in Aurora Solar (Sam's previous company). Anti-distillation clause discussions with HappyRobot team</td></tr>
+</table></section>
+
+<section id="competitive">
+<h2>Competitive Landscape</h2>
+<table><tr><th>Company</th><th>Focus</th><th>Duranta Differentiation</th></tr>
+<tr><td>World Labs (Fei-Fei Li)</td><td>3D spatial reasoning foundation model. $230M+ raised from a16z, NVentures</td><td>World Labs focuses on virtual 3D worlds (gaming/AR/VR). Duranta focuses on real-world geospatial data for commercial use cases</td></tr>
+<tr><td>Aurora Solar (Sam's prev co)</td><td>Solar design platform</td><td>Single-vertical SaaS vs. Duranta's multi-vertical foundation model approach</td></tr>
+<tr><td>Nearmap / EagleView</td><td>Aerial imagery + property data</td><td>Legacy imagery companies; Duranta's AI model is faster, more accurate, and generates digital twins from any input</td></tr>
+<tr><td>Google Earth / Maps</td><td>General mapping</td><td>Consumer/general use vs. Duranta's commercial-grade pixel-accurate measurement and analysis</td></tr>
+</table>
+<p>Key competitive moat: Duranta claims to be "the only image model in the world that does this accurately and fast" â pixel-accurate digital twins from a zip code input in seconds. The proprietary training data from real commercial deployments (landscaping, property maintenance) creates a data flywheel that general-purpose models cannot replicate.</p>
+</section>
+
+<section id="risks">
+<h2>Key Risks &amp; Mitigants</h2>
+<div class="risk-grid">
+<div class="investor-card"><h3><span class="badge red">Risk</span> Low ARR for $40M raise</h3><p>$90K ARR is modest for a $40M Series A. Investors may question revenue traction relative to ask.</p></div>
+<div class="investor-card"><h3><span class="badge green">Mitigant</span></h3><p>This is a foundation model bet on an elite repeat founder. 250K-image property deal closing imminently. Lowe's pilot ($400K-$1M) de-risks revenue. Aurora Solar track record proves Sam can scale.</p></div>
+<div class="investor-card"><h3><span class="badge red">Risk</span> Website presentation</h3><p>Per Ade: "The website looks like a landscaping company website and will hurt us. We need to change it before we send any intros."</p></div>
+<div class="investor-card"><h3><span class="badge green">Mitigant</span></h3><p>Fixable pre-fundraise. Team is aware and will update before outreach begins. Deck has been iterated significantly with Caroline's feedback.</p></div>
+<div class="investor-card"><h3><span class="badge red">Risk</span> Competitive threats from World Labs, big tech</h3><p>a16z-backed World Labs has $230M+ for spatial AI. Google/NVIDIA could build competing capabilities.</p></div>
+<div class="investor-card"><h3><span class="badge green">Mitigant</span></h3><p>World Labs targets virtual 3D worlds, not real-world commercial geospatial. Duranta's proprietary data from commercial deployments creates defensible moat. First-mover in real-economy geospatial AI.</p></div>
+<div class="investor-card"><h3><span class="badge red">Risk</span> Multi-vertical expansion execution</h3><p>Moving from landscaping to insurance, retail, energy requires different GTM motions and domain expertise per vertical.</p></div>
+<div class="investor-card"><h3><span class="badge green">Mitigant</span></h3><p>Sam built Aurora Solar across multiple solar market segments. The foundation model approach means the core technology transfers â only the application layer changes. Lowe's and property maintenance deals prove cross-vertical pull.</p></div>
+</div></section>
+
+<section id="investors">
+<h2>Investor-by-Investor Deep Dive (CRM)</h2>
+<p>Analysis of each target investor from Caroline's Duranta Series A CRM tracker, with thesis fit assessment and likelihood of interest.</p>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> Eclipse Ventures</h3>
+<div class="investor-meta"><span>Contact: <strong>Charly Mwangi</strong></span><span>Intro: <strong>Ade</strong></span><span>Wave: <strong>1</strong></span><span>Status: <strong>1st Meeting Done â</strong></span></div>
+<p><strong>What they invest in:</strong> "Real economy" tech â manufacturing, logistics, infrastructure + AI. Thesis centers on reinventing domestic manufacturing and physical-world AI.</p>
+<p><strong>Recent deals:</strong> Robotics + AI for manufacturing workforce. Charly personally emailed Ade asking for Axle intro â active dealmaker.</p>
+<p><strong>Thesis fit with Duranta:</strong> Near-perfect. Eclipse's "real economy" thesis maps directly to Duranta's geospatial AI for foundational industries. Physical-world + AI intersection is exactly their sweet spot.</p>
+<div class="rec high">â¬ HIGH likelihood (85%) â Already had 1st meeting. Eclipse's thesis is almost identical to Duranta's positioning. Strong warm relationship with Ade. Top candidate for co-lead.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t2">Tier 2</span> Battery Ventures</h3>
+<div class="investor-meta"><span>Contact: <strong>Aaron Neil</strong></span><span>Intro: <strong>Caroline</strong></span><span>Wave: <strong>1</strong></span><span>Status: <strong>1st Meeting Done â</strong></span></div>
+<p><strong>What they invest in:</strong> B2B SaaS, AI infrastructure, defense tech. Aaron Neil focuses on defense/AI infra; portfolio includes geospatial/defense AI plays.</p>
+<p><strong>Recent deals:</strong> Aalyria, Second Front, Kovr.AI (geospatial + defense AI).</p>
+<p><strong>Thesis fit with Duranta:</strong> Strong. Battery's defense/geospatial AI investments show comfort with the category. Duranta's vision model has clear defense/government applications.</p>
+<div class="rec high">â¬ HIGH likelihood (75%) â Already met. Geospatial AI fits their portfolio pattern. Defense angle provides additional upside narrative.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t2">Tier 2</span> Innovation Endeavors</h3>
+<div class="investor-meta"><span>Contact: <strong>Tomas Alvarez Belon</strong></span><span>Intro: <strong>Ade</strong></span><span>Wave: <strong>1</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> Eric Schmidt's fund. Invests at intersection of ubiquitous sensors, advanced ML, and robotics ("Super Evolution" thesis).</p>
+<p><strong>Recent deals:</strong> Urban Engines (spatial analytics), Forethought, Vicarious (robotics/AI).</p>
+<p><strong>Thesis fit with Duranta:</strong> Strong. Sensors + ML + physical world is their thesis. Geospatial foundation model is a direct expression of their "Super Evolution" framework.</p>
+<div class="rec high">â¬ HIGH likelihood (70%) â Strong thesis alignment. Eric Schmidt's interest in AI infrastructure + geospatial is well documented. Priority Wave 1 intro.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> Lightspeed Venture Partners</h3>
+<div class="investor-meta"><span>Contact: <strong>Bucky Moore</strong></span><span>Intro: <strong>Rexhi</strong></span><span>Wave: <strong>1</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> AI infrastructure and reasoning. Bucky Moore describes AI as "most significant technological shift since the internet."</p>
+<p><strong>Recent deals:</strong> Together AI, Labelbox (data labeling/CV), Browserbase. Active in AI infra.</p>
+<p><strong>Thesis fit with Duranta:</strong> Strong. Foundation model for geospatial data is AI infrastructure. Bucky's focus on AI reasoning + infrastructure is a match.</p>
+<div class="rec high">â¬ HIGH likelihood (70%) â AI infra thesis fits well. Bucky is aggressive on foundation model bets. Warm intro via Rexhi.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> a16z (Andreessen Horowitz)</h3>
+<div class="investor-meta"><span>Contact: <strong>Martin Casado</strong></span><span>Intro: <strong>Ade</strong></span><span>Wave: <strong>1</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> Multi-stage. Martin Casado focuses on enterprise/infra. Co-led World Labs' $230M+ round (Fei-Fei Li's spatial AI company).</p>
+<p><strong>Recent deals:</strong> World Labs ($230M, spatial intelligence), Databricks, numerous AI infra plays.</p>
+<p><strong>Thesis fit with Duranta:</strong> Complicated. World Labs investment shows strong conviction in spatial AI, but could create conflict concern. Sam flagged concern about Martin specifically because of WorldLabs. Caroline notes: invested in World Model / Spatial AI is actually a good signal â they understand the space and can move quickly.</p>
+<div class="rec med">â MEDIUM likelihood (55%) â World Labs conflict is real but manageable. Different focus areas (virtual vs. real-world). Ade drafted personal intro email to Martin. a16z participation would be a massive signal.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> Emergence Capital</h3>
+<div class="investor-meta"><span>Contact: <strong>Jake Saper</strong></span><span>Intro: <strong>Ade</strong></span><span>Wave: <strong>2</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> B2B AI applications specialist. Focuses on "AI-native services," generative AI moats, outcomes-based pricing.</p>
+<p><strong>Recent deals:</strong> Ironclad, Guru, Assembled, Logik. Strong B2B AI application portfolio.</p>
+<p><strong>Thesis fit with Duranta:</strong> Moderate-strong. Duranta's agentic commerce angle (Lowe's kiosk) fits the AI-native services thesis. The foundation model layer is more infra than Emergence typically does.</p>
+<div class="rec med">â MEDIUM likelihood (60%) â Good fit on the application layer. Ade flagged Emergence as "real possibility" worth saving for Wave 2 (better pitch by then).</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> Founders Fund</h3>
+<div class="investor-meta"><span>Contact: <strong>Matias or John</strong></span><span>Intro: <strong>Rexhi</strong></span><span>Wave: <strong>2</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> Contrarian, big-bet investing. ~$17B AUM. Co-led $30B Anthropic round. Deep AI conviction across foundation models and infrastructure.</p>
+<p><strong>Recent deals:</strong> Anthropic ($30B round), SpaceX, Anduril. Massive AI and deep-tech bets.</p>
+<p><strong>Thesis fit with Duranta:</strong> Strong. FF loves contrarian founder bets with massive TAM. "World's first geospatial foundation model" is exactly their style â big technical claim, repeat founder, enormous market.</p>
+<div class="rec high">â¬ HIGH likelihood (70%) â Ade flagged FF as "real possibility." Contrarian bet on physical-world AI fits their style. Saved for Wave 2 for best pitch.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> Benchmark</h3>
+<div class="investor-meta"><span>Contact: <strong>Eric (Vishria)</strong></span><span>Intro: <strong>Ade</strong></span><span>Wave: <strong>2</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> Early-stage, conviction-based. Eric Vishria is aggressive AI investor â portfolio includes Cerebras ($8B+, AI chips), Fireworks AI.</p>
+<p><strong>Recent deals:</strong> Cerebras, Fireworks AI, Chainguard. AI infrastructure and security.</p>
+<p><strong>Thesis fit with Duranta:</strong> Moderate. Benchmark invests on customer signal and founder quality. Sam's track record + customer pull from Lowe's/property maintenance is exactly what Benchmark responds to.</p>
+<div class="rec med">â MEDIUM likelihood (60%) â Benchmark's style is "invest on the slope." Sam's founder quality + emerging customer pull could resonate. Needs strong demo.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> NVentures (NVIDIA)</h3>
+<div class="investor-meta"><span>Contact: <strong>Artem (Barsukov)</strong></span><span>Intro: <strong>Caroline</strong></span><span>Wave: <strong>2</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> $500M AUM corporate VC. AI, deep learning, autonomous systems, simulation. Backs spatial intelligence / Large World Model companies leveraging NVIDIA hardware.</p>
+<p><strong>Recent deals:</strong> World Labs (co-investor), CoreWeave, numerous GPU-dependent AI companies.</p>
+<p><strong>Thesis fit with Duranta:</strong> Very strong. Duranta's vision foundation model likely runs on NVIDIA GPUs. NVentures has explicit interest in geospatial/spatial AI (World Labs co-investor). Strategic value beyond capital.</p>
+<div class="rec high">â¬ HIGH likelihood (75%) â Strategic fit is exceptional. Duranta is exactly the type of GPU-intensive geospatial AI that NVentures backs. Artem's Eclipse background adds extra alignment.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> Felicis Ventures</h3>
+<div class="investor-meta"><span>Contact: <strong>Sundeep Peechu</strong></span><span>Intro: <strong>Ade</strong></span><span>Wave: <strong>2</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> $900M tenth fund. Long-term AI bets. Portfolio includes Runway (AI video), Poolside, Weights & Biases. Shifting toward AI applications with humans-in-loop.</p>
+<p><strong>Recent deals:</strong> Runway, Poolside, Supabase, Weights & Biases.</p>
+<p><strong>Thesis fit with Duranta:</strong> Strong. Felicis backs category-creating AI companies. Geospatial foundation model is a new category. The humans-in-loop shift aligns with Duranta's commercial application focus.</p>
+<div class="rec med">â MEDIUM likelihood (65%) â Good thesis fit. Sundeep is an active AI investor. Ade warm intro gives strong access.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> General Catalyst</h3>
+<div class="investor-meta"><span>Contact: <strong>TBD</strong></span><span>Intro: <strong>Rexhi</strong></span><span>Wave: <strong>2</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> $32B+ AUM mega-fund. "Applied AI" and "global resilience" â healthcare, supply chain, energy, defense. AI for transforming existing categories.</p>
+<p><strong>Recent deals:</strong> Stripe, HubSpot, applied AI across healthcare and enterprise. $5B India commitment.</p>
+<p><strong>Thesis fit with Duranta:</strong> Strong. GC's "applied AI for existing categories" maps perfectly to Duranta applying AI to insurance, property, energy. The "global resilience" angle (infrastructure intelligence) is compelling.</p>
+<div class="rec med">â MEDIUM likelihood (60%) â Strong thesis fit but contact is TBD. Need to identify right partner. Rexhi leading intro search.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> ICONIQ Growth</h3>
+<div class="investor-meta"><span>Contact: <strong>Murali (Joshi)</strong></span><span>Intro: <strong>Jason</strong></span><span>Wave: <strong>2</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> Growth-stage data infra, developer tooling, AI. Portfolio includes Anthropic, Datadog, Procore (construction tech).</p>
+<p><strong>Recent deals:</strong> Anthropic, Statsig (acquired by OpenAI), Datadog.</p>
+<p><strong>Thesis fit with Duranta:</strong> Moderate-strong. Procore investment shows comfort with construction/physical-world tech. Data infrastructure focus fits the foundation model narrative. May prefer more revenue traction for growth-stage check.</p>
+<div class="rec med">â MEDIUM likelihood (55%) â Procore overlap is interesting. May want more revenue scale but Murali could see early foundation model opportunity.</div>
+</div>
+
+<div class="investor-card"><h3><span class="badge t1">Tier 1</span> Altimeter Capital</h3>
+<div class="investor-meta"><span>Contact: <strong>Jamin Ball</strong></span><span>Intro: <strong>Jason</strong></span><span>Wave: <strong>2</strong></span><span>Status: <strong>Not Contacted</strong></span></div>
+<p><strong>What they invest in:</strong> Metrics-first SaaS/cloud infrastructure. Jamin Ball leads AI infrastructure plays. Portfolio includes Hammerspace ($100M), dbt Labs, ClickHouse.</p>
+<p><strong>Recent deals:</strong> Hammerspace ($100M for data movement in AI), Airbyte, ClickHouse.</p>
+<p><strong>Thesis fit with Duranta:</strong> Moderate. Altimeter's metrics-driven approach may be challenged by $90K ARR. But Jamin's AI infrastructure interest + data platform angle could resonate if positioned as "data infrastructure for the physical world."</p>
+<div class="rec low">â LOWER likelihood (45%) â Metrics-driven approach may not match current revenue stage. Better candidate for Series B follow-on. Worth the meeting for relationship building.</div>
+</div>
+
+<div class="investor-card"><h3>Fifth Wall (Bonus â via GP meeting)</h3>
+<div class="investor-meta"><span>Contact: <strong>Brendan Wallace</strong></span><span>Intro: <strong>Ade (WhatsApp)</strong></span><span>Wave: <strong>Special</strong></span><span>Status: <strong>GP Meeting Scheduled</strong></span></div>
+<p><strong>What they invest in:</strong> $3.2B AUM â largest real estate tech VC. Exclusively PropTech: property management, construction tech, smart buildings.</p>
+<p><strong>Recent deals:</strong> $866M fund (2023). Major bets across real estate technology stack.</p>
+<p><strong>Thesis fit with Duranta:</strong> Very strong for property/real estate angle. Geospatial digital twins for property maintenance, insurance, and property assessment is core Fifth Wall territory. Brendan Wallace already received the pitch from Sam and had a conversation with Ade about it.</p>
+<div class="rec high">â¬ HIGH likelihood (80%) â Brendan Wallace is personally engaged. Sam attending Fifth Wall GP meeting. Real estate + geospatial AI is Fifth Wall's core thesis. Top co-lead candidate.</div>
+</div>
+</section>
+
+<section id="additional">
+<h2>Recommended Additional Investors</h2>
+<table><tr><th>Firm</th><th>Rationale</th><th>Priority</th></tr>
+<tr><td>Lux Capital</td><td>Deep-tech VC with strong geospatial/frontier AI thesis. Invested in Saildrone, Hadrian. Physical-world AI is their wheelhouse</td><td><span class="badge green">High</span></td></tr>
+<tr><td>Khosla Ventures</td><td>Deep tech + AI + climate. Vinod Khosla's fund backs bold technical bets. Solar/energy angle resonates with their clean energy portfolio</td><td><span class="badge green">High</span></td></tr>
+<tr><td>Radical Ventures</td><td>AI-specialist fund (Jordan Jacobs). Backed Geoffrey Hinton's ventures. Pure-play AI foundation model investor</td><td><span class="badge amber">Medium</span></td></tr>
+<tr><td>Valor Equity Partners</td><td>Real economy + tech intersection. Tesla, SpaceX investor. Physical-world intelligence thesis</td><td><span class="badge amber">Medium</span></td></tr>
+<tr><td>Point72 Ventures</td><td>Steve Cohen's venture arm. Active in geospatial data for financial applications. Insurance + property data angle</td><td><span class="badge amber">Medium</span></td></tr>
+<tr><td>Coatue Management</td><td>Cross-stage tech investor. Active in AI foundation models. Large enough check size for $40M round</td><td><span class="badge amber">Medium</span></td></tr>
+</table></section>
+
+<section id="recommendation">
+<h2>Investment Recommendation</h2>
+<div class="chart-container chart-sm"><canvas id="patternChart"></canvas></div>
+<h3>Recommendation: STRONG APPROVE â Lead the Series A</h3>
+<p>Duranta represents a rare combination of elite repeat founder, category-creating technology, and perfect Base10 thesis alignment. Sam Adeyemo's track record (Aurora Solar: $0â$100M ARR, $4B EV) de-risks the founder bet. The geospatial vision foundation model is a new category with massive multi-vertical TAM. Base10's existing relationship (Fund III seed investor + Aurora Solar history) gives us an unfair advantage in leading this round.</p>
+<h3>Priority Actions This Week</h3>
+<table><tr><th>Action</th><th>Owner</th><th>Timeline</th></tr>
+<tr><td>Fix website before sending intros (per Ade's feedback)</td><td>Sam</td><td>Before Apr 8</td></tr>
+<tr><td>Send Wave 1 intros (Eclipse â, Battery â, Innovation Endeavors, Lightspeed, a16z)</td><td>Caroline / Ade</td><td>Apr 3-4</td></tr>
+<tr><td>Send Wave 2 intros (Emergence, FF, Benchmark, NVentures, Felicis, GC, ICONIQ, Altimeter)</td><td>Caroline</td><td>Apr 4-5</td></tr>
+<tr><td>Sam in-person SF meetings</td><td>Sam</td><td>Apr 8-10</td></tr>
+<tr><td>Fifth Wall GP meeting</td><td>Sam / Ade</td><td>Apr 8-10</td></tr>
+<tr><td>Close property maintenance deal (~250K images)</td><td>Sam</td><td>Next week</td></tr>
+</table></section>
+
+<div class="footer">Confidential Â· Prepared by Adeyemi Ajao â Base10 Partners<br>Consensus Probability Analysis v1.0 Â· Generated April 2, 2026<br><a href="index.html" style="color:var(--accent)">Back to CRM Analysis Dashboard â</a></div>
+</div>
+
+<script>
+// Gauge
+const gC=document.getElementById('gaugeChart').getContext('2d');
+new Chart(gC,{type:'doughnut',data:{datasets:[{data:[78,22],backgroundColor:['#34D399','rgba(36,51,82,0.5)'],borderWidth:0,circumference:180,rotation:270}]},options:{responsive:false,cutout:'75%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+
+// TAM Chart
+new Chart(document.getElementById('tamChart'),{type:'bar',data:{labels:['Insurance','Property Maint.','Clean Energy','Retail/Commerce','Landscaping'],datasets:[{label:'Estimated TAM ($B)',data:[15,10,8,5,3],backgroundColor:['rgba(69,174,235,0.7)','rgba(52,211,153,0.7)','rgba(251,191,36,0.7)','rgba(99,102,241,0.7)','rgba(248,113,113,0.7)'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},title:{display:true,text:'Addressable Market by Vertical ($B)',color:'#E8EDF4',font:{size:14,weight:600}}},scales:{x:{ticks:{color:'#8899B0',callback:v=>'$'+v+'B'},grid:{color:'rgba(36,51,82,0.5)'}},y:{ticks:{color:'#8899B0'},grid:{display:false}}}}});
+
+// Radar
+new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels:['Real Economy','AI-Native','Platform Potential','BiB Adjacent','Portfolio Synergy','Founder Fit','Market Timing'],datasets:[{label:'Duranta Fit',data:[95,90,85,65,85,92,80],backgroundColor:'rgba(69,174,235,0.2)',borderColor:'#45AEEB',borderWidth:2,pointBackgroundColor:'#45AEEB',pointRadius:4},{label:'Minimum Threshold',data:[60,60,60,60,60,60,60],backgroundColor:'rgba(136,153,176,0.1)',borderColor:'#5A6E88',borderWidth:1,borderDash:[5,5],pointRadius:2,pointBackgroundColor:'#5A6E88'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Base10 Thesis Alignment',color:'#E8EDF4',font:{size:14,weight:600}},legend:{labels:{color:'#8899B0',font:{size:11}}}},scales:{r:{beginAtZero:true,max:100,ticks:{display:false},grid:{color:'rgba(36,51,82,0.5)'},pointLabels:{color:'#8899B0',font:{size:10}},angleLines:{color:'rgba(36,51,82,0.5)'}}}}});
+
+// Pattern/Signal Chart
+new Chart(document.getElementById('patternChart'),{type:'bar',data:{labels:['Founder Quality','Thesis Fit','Market TAM','Customer Pipeline','Competitive Moat','Revenue Stage','Valuation Risk'],datasets:[{label:'Signal Strength',data:[95,92,85,70,75,35,55],backgroundColor:['rgba(52,211,153,0.7)','rgba(52,211,153,0.7)','rgba(52,211,153,0.7)','rgba(251,191,36,0.7)','rgba(52,211,153,0.7)','rgba(248,113,113,0.7)','rgba(251,191,36,0.7)'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Investment Signal Assessment',color:'#E8EDF4',font:{size:14,weight:600}},legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{color:'#8899B0',callback:v=>v+'%'},grid:{color:'rgba(36,51,82,0.5)'}},x:{ticks:{color:'#8899B0',font:{size:10}},grid:{display:false}}}}});
+</script></body></html>
