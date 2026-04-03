@@ -3,6 +3,1086 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PearX W26 Demo Day - Summary & Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --bg: #0C1220;
+            --surface: #131D2E;
+            --accent: #45AEEB;
+            --green: #34D399;
+            --amber: #FBBF24;
+            --red: #F87171;
+            --text: #E8EDF4;
+            --text-muted: #8899B0;
+            --border: #243352;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            margin-bottom: 50px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .subtitle {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table-container {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 50px;
+        }
+
+        .table-controls {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .table-controls input,
+        .table-controls select {
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: Inter, sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .table-controls input::placeholder {
+            color: var(--text-muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: rgba(69, 174, 235, 0.1);
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            background-color: rgba(69, 174, 235, 0.15);
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-rating {
+            background-color: rgba(69, 174, 235, 0.2);
+            color: var(--accent);
+        }
+
+        .badge-consensus {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .consensus-5 { background-color: rgba(52, 211, 153, 0.3); color: var(--green); }
+        .consensus-4 { background-color: rgba(52, 211, 153, 0.2); color: var(--green); }
+        .consensus-3 { background-color: rgba(251, 191, 36, 0.2); color: var(--amber); }
+        .consensus-2 { background-color: rgba(248, 113, 113, 0.2); color: var(--red); }
+
+        .badge-fit-strong { background-color: rgba(52, 211, 153, 0.2); color: var(--green); }
+        .badge-fit-moderate { background-color: rgba(251, 191, 36, 0.2); color: var(--amber); }
+        .badge-fit-weak { background-color: rgba(248, 113, 113, 0.2); color: var(--red); }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 60px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .section-intro {
+            background-color: var(--surface);
+            border-left: 4px solid var(--accent);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .company-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .company-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .company-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .company-url {
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-top: 5px;
+        }
+
+        .company-ratings {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .meta-item {
+            background-color: rgba(69, 174, 235, 0.05);
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 2px solid var(--accent);
+        }
+
+        .meta-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-weight: 500;
+        }
+
+        .consensus-box {
+            background-color: rgba(69, 174, 235, 0.08);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .consensus-score {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .consensus-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .consensus-circle.c5 { background-color: rgba(52, 211, 153, 0.3); color: var(--green); }
+        .consensus-circle.c4 { background-color: rgba(52, 211, 153, 0.2); color: var(--green); }
+        .consensus-circle.c3 { background-color: rgba(251, 191, 36, 0.2); color: var(--amber); }
+        .consensus-circle.c2 { background-color: rgba(248, 113, 113, 0.2); color: var(--red); }
+
+        .consensus-text h3 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .consensus-probability {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .consensus-dimensions {
+            background-color: var(--bg);
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .dimension {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .dimension:last-child {
+            margin-bottom: 0;
+        }
+
+        .dimension-label {
+            flex: 1;
+            color: var(--text-muted);
+        }
+
+        .dimension-score {
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .miss-flags {
+            background-color: var(--bg);
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 2px solid var(--amber);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .chart-container {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            height: 400px;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .priority-list {
+            list-style: none;
+        }
+
+        .priority-item {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .priority-rank {
+            background-color: var(--accent);
+            color: var(--bg);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .priority-info {
+            flex: 1;
+        }
+
+        .priority-company {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .priority-reason {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .priority-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .footer-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .footer-links a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PearX W26 Demo Day</h1>
+            <p class="subtitle">Augmented Summary & Claude Consensus Probability Analysis</p>
+            <div class="header-meta">
+                <div>
+                    <div><strong>April 2, 2026</strong></div>
+                    <div>Ade Ajao & Rexhi Dollaku â Base10 Partners</div>
+                </div>
+                <div style="text-align: right;">
+                    <strong>Pear Venture Partners</strong>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">13</div>
+                <div class="stat-label">Companies Presented</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-strong-fit">8</div>
+                <div class="stat-label">Strong Base10 Fit</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-high-consensus">9</div>
+                <div class="stat-label">High Consensus Prob (4-5)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">$194T+</div>
+                <div class="stat-label">Total Addressable Market</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-controls">
+                <input type="text" id="searchInput" placeholder="Search companies..." style="flex: 1; min-width: 200px;">
+                <select id="sectorFilter">
+                    <option value="">All Sectors</option>
+                    <option value="Manufacturing">Manufacturing & AI</option>
+                    <option value="B2B">B2B & Infrastructure</option>
+                    <option value="Cybersecurity">Cybersecurity & Defense</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Finance">Finance & Compliance</option>
+                    <option value="Enterprise">Enterprise</option>
+                </select>
+            </div>
+            <table id="batchTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Company</th>
+                        <th onclick="sortTable(1)">Sector</th>
+                        <th onclick="sortTable(2)">Rexhi Rating</th>
+                        <th onclick="sortTable(3)">Consensus Prob</th>
+                        <th onclick="sortTable(4)">Base10 Fit</th>
+                        <th>Key Signal</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Claude Consensus Probability Analysis Methodology</h2>
+        <div class="section-intro">
+            <strong>Consensus Probability Score:</strong> Independent assessment of each company's probability of achieving consensus â defined as raising $25M+ from a Top-50 venture firm within 18 months. Based on five investment signal dimensions and miss prediction patterns from the CRM Miss Analysis framework.
+            <br><br>
+            <strong>Five Scoring Dimensions:</strong> Customer Love & GTM Repeatability (25%) | Growth Trajectory (20%) | Market Size - Platform Perspective (20%) | Founder Quality (20%) | Competitive Moat (15%)
+            <br><br>
+            <strong>Miss Pattern Flags:</strong> Static TAM, Customer Discounted, Recency Discount, Incumbent Over-indexed
+        </div>
+
+        <div id="companiesContainer"></div>
+
+        <h2>Claude Consensus Probability Summary</h2>
+        <div class="table-container" style="overflow-x: auto;">
+            <table id="consensusTable">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Consensus Score</th>
+                        <th>Customer Love</th>
+                        <th>Growth Trajectory</th>
+                        <th>Market Size</th>
+                        <th>Founder Quality</th>
+                        <th>Competitive Moat</th>
+                    </tr>
+                </thead>
+                <tbody id="consensusTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Priority Follow-Up List</h2>
+        <ul class="priority-list" id="priorityList"></ul>
+
+        <h2>Key Charts & Visualizations</h2>
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Rexhi's Demo Day Ratings Distribution</div>
+                <canvas id="ratingsChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Base10 Thesis Fit</div>
+                <canvas id="fitChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Batch by Primary Sector</div>
+                <canvas id="sectorChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Consensus Probability Distribution</div>
+                <canvas id="consensusDistChart"></canvas>
+            </div>
+        </div>
+
+        <footer>
+            <strong>Prepared by Ade Ajao & Rexhi Dollaku â Base10 Partners</strong>
+            <div style="margin-top: 10px; font-size: 0.8rem;">Confidential â For Internal Use Only</div>
+            <div class="footer-links">
+                <a href="index.html">Back to Index</a>
+                <a href="https://base10.vc" target="_blank">base10.vc</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const companies = [
+            {
+                name: "Quinn",
+                url: "quinn.insure",
+                sector: "B2B, Insurance, AI",
+                rexhiRating: 4,
+                consensusScore: 4,
+                base10Fit: "Strong",
+                marketSize: "$104B",
+                description: "Commercial property owners spend $104B/yr on insurance, most underserved. Quinn uses AI agents to automate placement workflow end-to-end.",
+                founders: "Vikram Battalapalli (CEO, UIUC, AI at Johns Hopkins APL/Leidos, family owns $11M in hotel real estate), Hemanth Bellala (CTO, Georgia Tech, bootstrapped Bento to $140K ARR, grew Arbor $0-$400K in 8 months, bought commercial property at 22, helped insure $14M in multifamily)",
+                team: "Domain-expert founders with real estate background",
+                leadPartner: "Ajay Kamat",
+                keySignal: "Domain expertise + AI automation of legacy market",
+                dimensions: { customerLove: 4, growthTrajectory: 4, marketSize: 5, founderQuality: 5, competitiveMoat: 4 },
+                missFlags: "None identified",
+                fitAnalysis: "Strong vertical AI play in $104B market with domain-expert founders and clear GTM."
+            },
+            {
+                name: "Even Platforms",
+                url: "evenplatforms.com",
+                sector: "B2B, Manufacturing, AI",
+                rexhiRating: 5,
+                consensusScore: 5,
+                base10Fit: "Strong",
+                marketSize: "$50B",
+                description: "Machine shops generate $50B annually in US but face severe labor shortage. By 2030, 2.1M unfilled manufacturing positions. Even builds modular automated machine shops.",
+                founders: "Joey Licht (CEO, MIT CS+AI, built ML for NBA/FIFA, Point72 software investor), John Malloy (COO, MIT MechE, invented 3D printing for housing foundations, Bain aerospace/defense), Rhodes Fotopulos (CTO, MIT PhD)",
+                team: "MIT triple-threat with manufacturing + ML + aerospace expertise",
+                leadPartner: "Ajay Kamat",
+                keySignal: "National security + labor shortage urgency + MIT pedigree",
+                dimensions: { customerLove: 5, growthTrajectory: 5, marketSize: 5, founderQuality: 5, competitiveMoat: 5 },
+                missFlags: "None â near-certain consensus pattern",
+                fitAnalysis: "Tier 1 fit for Base10. Domain-expert founders in vertical AI solving $50B labor shortage with defense implications."
+            },
+            {
+                name: "Paxos Health",
+                url: "paxoshealth.com",
+                sector: "Healthcare AI Services",
+                rexhiRating: 3,
+                consensusScore: 3,
+                base10Fit: "Moderate",
+                marketSize: "$80B+ lost revenue",
+                description: "Medical device/lab/pharma companies spend $250B/yr developing products. After FDA approval, insurance denials result in $80B+ in lost revenue. Paxos unlocks revenue post-approval.",
+                founders: "Haley King (CEO), Alex Lacey, Malcolm Asher",
+                team: "Healthcare AI founders",
+                leadPartner: "Ajay Kamat",
+                keySignal: "$80B+ lost to insurance denials",
+                dimensions: { customerLove: 3, growthTrajectory: 3, marketSize: 4, founderQuality: 3, competitiveMoat: 3 },
+                missFlags: "Long enterprise sales cycles; regulatory complexity",
+                fitAnalysis: "Moderate fit. Large TAM but regulatory headwinds and long sales cycles typical of healthcare."
+            },
+            {
+                name: "TruTec",
+                url: "",
+                sector: "Construction, AI, Computer Vision",
+                rexhiRating: 3,
+                consensusScore: 3,
+                base10Fit: "Moderate",
+                marketSize: "$17B",
+                description: "$17B/yr spent on manual project estimation. TruTec uses computer vision to automate bidding from satellite imagery and blueprints.",
+                founders: "David Lim, Joe Kim (10+ yrs construction PM, US Army vet, Iraq deployment), Terry Kim (12+ yrs construction, licensed GC)",
+                team: "Domain-expert construction team",
+                leadPartner: "Ajay Kamat",
+                keySignal: "Computer vision + domain expertise",
+                dimensions: { customerLove: 3, growthTrajectory: 3, marketSize: 4, founderQuality: 4, competitiveMoat: 3 },
+                missFlags: "Construction tech adoption historically slow",
+                fitAnalysis: "Moderate fit. Clear problem but construction SaaS adoption challenges."
+            },
+            {
+                name: "Phaselaw",
+                url: "",
+                sector: "B2B, AI, Compliance",
+                rexhiRating: 3,
+                consensusScore: 3,
+                base10Fit: "Strong",
+                marketSize: "$17B",
+                description: "30M+ compliance requests/yr, $17B spent. Phaselaw automates document disclosure workflows for enterprise legal and compliance teams.",
+                founders: "Josh Schwartz (CEO, founded after exit of Chartbeat where he was CTO/DPO from early days through $70M+ revenue, MIT CSAIL PhD student, UChicago BS), David van Dokkum (CTO, sales engineer #2 at Chartbeat)",
+                team: "$70M+ revenue exit founders",
+                leadPartner: "Kathleen Estreich",
+                keySignal: "Proven execution pedigree + large compliance TAM",
+                dimensions: { customerLove: 3, growthTrajectory: 3, marketSize: 4, founderQuality: 5, competitiveMoat: 3 },
+                missFlags: "Compliance market crowded; may be Customer Discounted risk if Chartbeat founder success not weighted appropriately",
+                fitAnalysis: "Strong fit. Enterprise buyer + proven founder, but compliance is crowded category."
+            },
+            {
+                name: "Hilt",
+                url: "",
+                sector: "B2B, Cybersecurity, AI",
+                rexhiRating: 3,
+                consensusScore: 3,
+                base10Fit: "Moderate",
+                marketSize: "Tens of billions in enterprise losses",
+                description: "Enterprises lose tens of billions to data breaches. Hilt provides real-time data breach prevention through data movement governance and AI monitoring.",
+                founders: "William Cielen (CEO, youngest quant at National Bank of Canada, algorithmic trading, Mensa member, Z fellow, skipped 2 grades, started college at 15)",
+                team: "Prodigy founder with quant background",
+                leadPartner: "Arash Afrakhteh",
+                keySignal: "Founder pedigree + critical problem",
+                dimensions: { customerLove: 3, growthTrajectory: 3, marketSize: 4, founderQuality: 5, competitiveMoat: 3 },
+                missFlags: "Cybersecurity market highly competitive",
+                fitAnalysis: "Moderate fit. Excellent founder but crowded cybersecurity landscape."
+            },
+            {
+                name: "Hexagon",
+                url: "",
+                sector: "B2B, E-Commerce, Infrastructure, AI",
+                rexhiRating: 2,
+                consensusScore: 2,
+                base10Fit: "Moderate",
+                marketSize: "Emerging AI commerce",
+                description: "Hundreds of millions already shopping through AI. Hexagon builds intelligent AI shopping agents that understand products deeply and help users navigate commerce.",
+                founders: "Pear-backed team",
+                team: "AI/commerce team",
+                leadPartner: "Pear Partner",
+                keySignal: "AI commerce infrastructure play",
+                dimensions: { customerLove: 2, growthTrajectory: 2, marketSize: 3, founderQuality: 3, competitiveMoat: 2 },
+                missFlags: "High competition from Shopify/Amazon; unclear moat; consumer-facing risk",
+                fitAnalysis: "Moderate fit. AI commerce is real but competitive landscape challenging."
+            },
+            {
+                name: "Rive",
+                url: "",
+                sector: "B2B, AI, Industrial Procurement",
+                rexhiRating: 3,
+                consensusScore: 3,
+                base10Fit: "Strong",
+                marketSize: "Multi-trillion industrial procurement",
+                description: "Fastest-growing sectors (AI infra, manufacturing, energy) driven by complex physical systems. Procurement still manual. Rive builds AI agents for engineering-aware procurement.",
+                founders: "Pear-backed team",
+                team: "Industrial AI team",
+                leadPartner: "Pear Partner",
+                keySignal: "Industrial procurement + AI agents",
+                dimensions: { customerLove: 3, growthTrajectory: 3, marketSize: 5, founderQuality: 3, competitiveMoat: 3 },
+                missFlags: "Market Size (TAM) potentially Static â actual serviceable market may exceed initial positioning",
+                fitAnalysis: "Strong fit. Multi-trillion TAM with AI automation unlocking value."
+            },
+            {
+                name: "Incalmo",
+                url: "",
+                sector: "Deep Tech, Cybersecurity, AI",
+                rexhiRating: 4,
+                consensusScore: 4,
+                base10Fit: "Strong",
+                marketSize: "Cybersecurity frontier / AI safety",
+                description: "Cybersecurity won't scale against AI-powered attackers. Incalmo creates security evaluation and reinforcement learning environments for frontier labs and security vendors.",
+                founders: "Brian Singer (CEO, 2nd-time founder, Carnegie Mellon PhD, first to show LLMs can autonomously hack networks with Anthropic collab, published in Wall Street Journal), Mark Dong (CTO, Carnegie Mellon)",
+                team: "Carnegie Mellon PhD team with published AI security research",
+                leadPartner: "Arash Afrakhteh",
+                keySignal: "Frontier AI security + Anthropic collaboration + WSJ coverage",
+                dimensions: { customerLove: 4, growthTrajectory: 4, marketSize: 4, founderQuality: 5, competitiveMoat: 5 },
+                missFlags: "None â frontier AI security first-mover",
+                fitAnalysis: "Strong fit. Frontier AI security with published research and Anthropic validation."
+            },
+            {
+                name: "Meridian",
+                url: "",
+                sector: "B2B, Supply Chain, Logistics",
+                rexhiRating: 4,
+                consensusScore: 4,
+                base10Fit: "Strong",
+                marketSize: "$10T+ global supply chain",
+                description: "Context-aware AI agents for global supply chain optimization. Applies LLM intelligence to the most critical logistics problem.",
+                founders: "Siddharth Vijay (CEO, 3-time published ML author by age 18 in Cell journal, international patent on DeepGeneX, Columbia CS, led supply chain at Amazon)",
+                team: "Amazon supply chain + ML research pedigree",
+                leadPartner: "Shravan Reddy",
+                keySignal: "Amazon supply chain + research credentials",
+                dimensions: { customerLove: 4, growthTrajectory: 4, marketSize: 5, founderQuality: 5, competitiveMoat: 4 },
+                missFlags: "None â validated founder + $10T TAM",
+                fitAnalysis: "Strong fit. Amazon supply chain background + published ML researcher in $10T+ market."
+            },
+            {
+                name: "Modo",
+                url: "",
+                sector: "B2B, Enterprise AI",
+                rexhiRating: 2,
+                consensusScore: 2,
+                base10Fit: "Weak",
+                marketSize: "$283B enterprise AI tools",
+                description: "Companies spent $283B on AI tools last year. Modo captures workflow context and guides employees with right AI agent/prompt. Gives leaders visibility into AI ROI and adoption.",
+                founders: "Johnny Chang (CEO, Stanford CS, co-created #1 text-to-SQL AI agent, head TA for Andrew Ng's AI courses, founded Stanford Founders)",
+                team: "Stanford + Andrew Ng network",
+                leadPartner: "Khalil Fuller",
+                keySignal: "Enterprise AI workflow layer",
+                dimensions: { customerLove: 2, growthTrajectory: 2, marketSize: 4, founderQuality: 5, competitiveMoat: 2 },
+                missFlags: "Incumbent Over-indexed (Microsoft, Google likely to build); horizontal enterprise plays historically hard",
+                fitAnalysis: "Weak fit. Strong founder but horizontal enterprise layer difficult to defend against incumbents."
+            },
+            {
+                name: "Omnibus",
+                url: "",
+                sector: "B2B, GovTech, AI",
+                rexhiRating: 3,
+                consensusScore: 3,
+                base10Fit: "Moderate",
+                marketSize: "$4.5T government spending",
+                description: "Local/state govts spend $4.5T/yr under overlapping regulations. Billions in undetected fraud, weeks-long book closings. Omnibus is AI-native financial management system.",
+                founders: "Pear-backed team",
+                team: "GovTech AI team",
+                leadPartner: "Pear Partner",
+                keySignal: "AI-native gov finance + fraud detection",
+                dimensions: { customerLove: 3, growthTrajectory: 3, marketSize: 5, founderQuality: 3, competitiveMoat: 3 },
+                missFlags: "Government sales cycles historically slow",
+                fitAnalysis: "Moderate fit. $4.5T TAM but government procurement and adoption challenges."
+            },
+            {
+                name: "Takt",
+                url: "",
+                sector: "B2B, Manufacturing, AI",
+                rexhiRating: 4,
+                consensusScore: 4,
+                base10Fit: "Strong",
+                marketSize: "$84B ($20B software + $64B labor)",
+                description: "US manufacturers spend $20B/yr on fragmented software, $64B on back-office labor. Factories run on disconnected ERPs/spreadsheets. Takt provides the data layer for autonomous factories.",
+                founders: "Alex Rhea (CTO, ex-AWS Sr. Container Services GTM for Amazon EKS), Glynn LoPresti (CEO, ex-Cloudreach), Noah MacMichael",
+                team: "AWS infrastructure + enterprise background",
+                leadPartner: "Pear Partner (connected to Pejman Nozad)",
+                keySignal: "Manufacturing OS + AWS pedigree + $84B TAM",
+                dimensions: { customerLove: 4, growthTrajectory: 4, marketSize: 4, founderQuality: 4, competitiveMoat: 4 },
+                missFlags: "Static TAM risk â actual manufacturing data platform TAM likely exceeds $84B",
+                fitAnalysis: "Strong fit. Manufacturing OS positioning + AWS team + $84B visible market (likely understated)."
+            }
+        ];
+
+        // Populate table
+        function populateTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            companies.forEach(c => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${c.name}</strong></td>
+                    <td>${c.sector}</td>
+                    <td><span class="badge badge-rating">${c.rexhiRating}/5</span></td>
+                    <td><span class="badge consensus-badge consensus-${c.consensusScore}">${c.consensusScore}/5</span></td>
+                    <td><span class="badge ${c.base10Fit === 'Strong' ? 'badge-fit-strong' : c.base10Fit === 'Moderate' ? 'badge-fit-moderate' : 'badge-fit-weak'}">${c.base10Fit}</span></td>
+                    <td style="font-size: 0.9rem; color: var(--text-muted);">${c.keySignal}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Company cards
+        function populateCompanies() {
+            const container = document.getElementById('companiesContainer');
+            container.innerHTML = '';
+            companies.forEach((c, i) => {
+                const consensusClass = `c${c.consensusScore}`;
+                const card = document.createElement('div');
+                card.className = 'company-card';
+                card.innerHTML = `
+                    <div class="company-header">
+                        <div>
+                            <div class="company-name">${i+1}. ${c.name}</div>
+                            ${c.url ? `<div class="company-url">${c.url}</div>` : ''}
+                        </div>
+                        <div class="company-ratings">
+                            <span class="badge badge-rating">Rexhi: ${c.rexhiRating}/5</span>
+                        </div>
+                    </div>
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <div class="meta-label">Sector</div>
+                            <div class="meta-value">${c.sector}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Market Size</div>
+                            <div class="meta-value">${c.marketSize}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Team</div>
+                            <div class="meta-value">${c.team}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Lead Partner</div>
+                            <div class="meta-value">${c.leadPartner}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Base10 Fit</div>
+                            <div class="meta-value" style="color: ${c.base10Fit === 'Strong' ? 'var(--green)' : c.base10Fit === 'Moderate' ? 'var(--amber)' : 'var(--red)'}">${c.base10Fit}</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Product:</strong> ${c.description}
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Founders:</strong> ${c.founders}
+                    </div>
+                    <div class="consensus-box">
+                        <div class="consensus-score">
+                            <div class="consensus-circle ${consensusClass}">${c.consensusScore}</div>
+                            <div class="consensus-text">
+                                <h3>Claude Consensus Probability</h3>
+                                <div class="consensus-probability">${c.consensusScore >= 4 ? 'Very High (>70%)' : c.consensusScore === 3 ? 'Moderate (30-50%)' : 'Low (15-30%)'} probability of $25M+ raise from Top-50 fund in 18 months</div>
+                            </div>
+                        </div>
+                        <div class="consensus-dimensions">
+                            <div class="dimension">
+                                <span class="dimension-label">Customer Love & GTM Repeatability</span>
+                                <span class="dimension-score">${c.dimensions.customerLove}/5</span>
+                            </div>
+                            <div class="dimension">
+                                <span class="dimension-label">Growth Trajectory</span>
+                                <span class="dimension-score">${c.dimensions.growthTrajectory}/5</span>
+                            </div>
+                            <div class="dimension">
+                                <span class="dimension-label">Market Size (Platform Perspective)</span>
+                                <span class="dimension-score">${c.dimensions.marketSize}/5</span>
+                            </div>
+                            <div class="dimension">
+                                <span class="dimension-label">Founder Quality</span>
+                                <span class="dimension-score">${c.dimensions.founderQuality}/5</span>
+                            </div>
+                            <div class="dimension">
+                                <span class="dimension-label">Competitive Moat</span>
+                                <span class="dimension-score">${c.dimensions.competitiveMoat}/5</span>
+                            </div>
+                        </div>
+                        ${c.missFlags !== 'None identified' && c.missFlags !== 'None â near-certain consensus pattern' && c.missFlags !== 'None â frontier AI security first-mover' && c.missFlags !== 'None â validated founder + $10T TAM' ? `
+                        <div class="miss-flags">
+                            <strong>Miss Pattern Flags:</strong> ${c.missFlags}
+                        </div>
+                        ` : ''}
+                        <div style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
+                            <strong>Base10 Fit Analysis:</strong> ${c.fitAnalysis}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Consensus scoring table
+        function populateConsensusTable() {
+            const tbody = document.getElementById('consensusTableBody');
+            tbody.innerHTML = '';
+            companies.forEach(c => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${c.name}</strong></td>
+                    <td><span class="badge consensus-badge consensus-${c.consensusScore}">${c.consensusScore}/5</span></td>
+                    <td>${c.dimensions.customerLove}/5</td>
+                    <td>${c.dimensions.growthTrajectory}/5</td>
+                    <td>${c.dimensions.marketSize}/5</td>
+                    <td>${c.dimensions.founderQuality}/5</td>
+                    <td>${c.dimensions.competitiveMoat}/5</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Priority list
+        function populatePriorityList() {
+            const scored = companies.map(c => ({
+                ...c,
+                priorityScore: (c.rexhiRating * 3 + c.consensusScore * 3 + (c.base10Fit === 'Strong' ? 5 : c.base10Fit === 'Moderate' ? 3 : 1))
+            }));
+            scored.sort((a, b) => b.priorityScore - a.priorityScore);
+
+            const list = document.getElementById('priorityList');
+            list.innerHTML = '';
+            scored.slice(0, 8).forEach((c, i) => {
+                const item = document.createElement('li');
+                item.className = 'priority-item';
+                item.innerHTML = `
+                    <div class="priority-rank">${i+1}</div>
+                    <div class="priority-info">
+                        <div class="priority-company">${c.name}</div>
+                        <div class="priority-reason">${c.keySignal}</div>
+                    </div>
+                    <div class="priority-badges">
+                        <span class="badge badge-rating">R: ${c.rexhiRating}</span>
+                        <span class="badge consensus-badge consensus-${c.consensusScore}">C: ${c.consensusScore}</span>
+                        <span class="badge ${c.base10Fit === 'Strong' ? 'badge-fit-strong' : 'badge-fit-moderate'}">B10: ${c.base10Fit}</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Search and filter
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const query = this.value.toLowerCase();
+            const rows = document.getElementById('tableBody').getElementsByTagName('tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.classList.toggle('hidden', !text.includes(query));
+            });
+        });
+
+        document.getElementById('sectorFilter').addEventListener('change', function() {
+            const sector = this.value.toLowerCase();
+            const rows = document.getElementById('tableBody').getElementsByTagName('tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.classList.toggle('hidden', sector && !text.includes(sector));
+            });
+        });
+
+        // Sort table
+        function sortTable(columnIndex) {
+            const tbody = document.getElementById('tableBody');
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
+            rows.sort((a, b) => {
+                const aText = a.children[columnIndex].textContent;
+                const bText = b.children[columnIndex].textContent;
+                return aText.localeCompare(bText);
+            });
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Charts
+        function initCharts() {
+            // Ratings distribution
+            const ratingsCtx = document.getElementById('ratingsChart').getContext('2d');
+            new Chart(ratingsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['5/5', '4/5', '3/5', '2/5'],
+                    datasets: [{
+                        label: 'Companies',
+                        data: [
+                            companies.filter(c => c.rexhiRating === 5).length,
+                            companies.filter(c => c.rexhiRating === 4).length,
+                            companies.filter(c => c.rexhiRating === 3).length,
+                            companies.filter(c => c.rexhiRating === 2).length
+                        ],
+                        backgroundColor: ['var(--green)', 'var(--green)', 'var(--amber)', 'var(--red)'],
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            // Base10 fit
+            const fitCtx = document.getElementById('fitChart').getContext('2d');
+            new Chart(fitCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Strong', 'Moderate', 'Weak'],
+                    datasets: [{
+                        data: [
+                            companies.filter(c => c.base10Fit === 'Strong').length,
+                            companies.filter(c => c.base10Fit === 'Moderate').length,
+                            companies.filter(c => c.base10Fit === 'Weak').length
+                        ],
+                        backgroundColor: ['var(--green)', 'var(--amber)', 'var(--red)'],
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Sector distribution
+            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+            const sectorCounts = {};
+            companies.forEach(c => {
+                const primary = c.sector.split(',')[0];
+                sectorCounts[primary] = (sectorCounts[primary] || 0) + 1;
+            });
+            new Chart(sectorCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(sectorCounts),
+                    datasets: [{
+                        data: Object.values(sectorCounts),
+                        backgroundColor: ['var(--accent)', 'var(--green)', 'var(--amber)', 'var(--red)', '#A78BFA', '#38BDF8']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Consensus distribution
+            const consensusCtx = document.getElementById('consensusDistChart').getContext('2d');
+            new Chart(consensusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['5/5', '4/5', '3/5', '2/5'],
+                    datasets: [{
+                        label: 'Companies',
+                        data: [
+                            companies.filter(c => c.consensusScore === 5).length,
+                            companies.filter(c => c.consensusScore === 4).length,
+                            companies.filter(c => c.consensusScore === 3).length,
+                            companies.filter(c => c.consensusScore === 2).length
+                        ],
+                        backgroundColor: ['var(--green)', 'var(--green)', 'var(--amber)', 'var(--red)'],
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // Initialize
+        populateTable();
+        populateCompanies();
+        populateConsensusTable();
+        populatePriorityList();
+        document.getElementById('stat-strong-fit').textContent = companies.filter(c => c.base10Fit === 'Strong').length;
+        document.getElementById('stat-high-consensus').textContent = companies.filter(c => c.consensusScore >= 4).length;
+        initCharts();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PearX W26 Demo Day Summary - Base10 Partners</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
