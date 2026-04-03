@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIAgents Preliminary Assessment - Base10 CRM Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --bg: #0C1220;
+            --surface: #131D2E;
+            --surface-2: #1A2740;
+            --border: #243352;
+            --text: #E8EDF4;
+            --text-dim: #8899B0;
+            --text-muted: #5A6E88;
+            --accent: #45AEEB;
+            --accent-hover: #26A6ED;
+            --green: #34D399;
+            --amber: #FBBF24;
+            --red: #F87171;
+            --tier1: #DC2626;
+            --tier2: #F59E0B;
+            --tier3: #3B82F6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+
+        header { text-align: center; margin-bottom: 50px; border-bottom: 2px solid var(--accent); padding-bottom: 30px; }
+        .logo { display: inline-block; background: linear-gradient(135deg, var(--accent), #2563EB); padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.9em; margin-bottom: 20px; letter-spacing: 1px; }
+        header h1 { font-size: 2.4em; margin-bottom: 10px; color: var(--accent); font-weight: 800; letter-spacing: -1px; }
+        header p { font-size: 1.05em; color: var(--text-dim); margin-bottom: 5px; }
+        .report-date { color: var(--text-muted); font-size: 0.9em; margin-top: 12px; }
+
+        .verdict-box { background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.1)); border: 2px solid var(--amber); border-radius: 12px; padding: 32px; margin-bottom: 50px; text-align: center; }
+        .verdict-label { font-size: 0.8em; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 8px; }
+        .verdict-score { font-size: 3.5em; font-weight: 800; color: var(--amber); margin-bottom: 4px; }
+        .verdict-text { font-size: 1.3em; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+        .verdict-sub { font-size: 0.95em; color: var(--text-dim); max-width: 700px; margin: 0 auto; line-height: 1.7; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 50px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 22px; border-radius: 8px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(69,174,235,0.1); }
+        .stat-card.green { border-left-color: var(--green); }
+        .stat-card.red { border-left-color: var(--red); }
+        .stat-card.amber { border-left-color: var(--amber); }
+        .stat-value { font-size: 2em; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .stat-card.green .stat-value { color: var(--green); }
+        .stat-card.red .stat-value { color: var(--red); }
+        .stat-card.amber .stat-value { color: var(--amber); }
+        .stat-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+
+        section { margin-bottom: 60px; }
+        h2 { font-size: 1.6em; color: var(--accent); margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 12px; font-weight: 700; }
+        h3 { font-size: 1.2em; color: var(--text); margin: 25px 0 12px; font-weight: 600; }
+        h4 { font-size: 1.05em; color: var(--accent); margin: 20px 0 10px; font-weight: 600; }
+
+        p { margin-bottom: 14px; color: var(--text-dim); line-height: 1.75; }
+        p.highlight { color: var(--text); }
+
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; background: var(--surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); font-size: 0.88em; }
+        table th { background: var(--surface-2); color: var(--accent); padding: 14px 12px; text-align: left; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--accent); }
+        table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        table tr:last-child td { border-bottom: none; }
+        table tr:hover { background: var(--surface-2); }
+
+        .signal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        @media (max-width: 768px) { .signal-grid { grid-template-columns: 1fr; } }
+        .signal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+        .signal-card.positive { border-left: 4px solid var(--green); }
+        .signal-card.negative { border-left: 4px solid var(--red); }
+        .signal-card.mixed { border-left: 4px solid var(--amber); }
+        .signal-card h4 { margin-top: 0; }
+
+        .pattern-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin: 16px 0; }
+        .pattern-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .pattern-match { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pattern-match.high { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+        .pattern-match.medium { background: rgba(245,158,11,0.2); color: #FED7AA; }
+        .pattern-match.low { background: rgba(34,211,153,0.2); color: #A7F3D0; }
+
+        .quote-block { background: var(--surface-2); border-left: 3px solid var(--accent); padding: 16px 20px; margin: 14px 0; border-radius: 0 8px 8px 0; font-style: italic; color: var(--text-dim); }
+        .quote-attr { font-style: normal; font-size: 0.85em; color: var(--text-muted); margin-top: 6px; }
+
+        .tier-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+        .tier-badge.t1 { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+        .tier-badge.t2 { background: rgba(245,158,11,0.2); color: #FED7AA; }
+        .tier-badge.consensus { background: rgba(69,174,235,0.2); color: var(--accent); }
+
+        .chart-container { position: relative; height: 350px; margin: 20px 0; background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+
+        .rec-box { background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.05)); border: 1px solid var(--amber); border-radius: 12px; padding: 28px; margin: 20px 0; }
+        .rec-box h4 { color: var(--amber); margin-top: 0; }
+        .rec-box.alert { background: linear-gradient(135deg, rgba(69,174,235,0.1), rgba(37,99,235,0.05)); border: 1px solid var(--accent); }
+        .rec-box.alert h4 { color: var(--accent); }
+
+        .timeline { margin: 16px 0; padding-left: 18px; border-left: 2px solid var(--accent); }
+        .timeline-item { margin: 12px 0; padding-left: 16px; position: relative; }
+        .timeline-item::before { content: ''; position: absolute; left: -23px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+        .timeline-date { font-size: 0.8em; color: var(--text-muted); font-weight: 500; }
+        .timeline-text { color: var(--text-dim); font-size: 0.92em; margin-top: 3px; }
+
+        .firm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 16px 0; }
+        .firm-tag { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; }
+        .firm-tag .firm-name { font-weight: 600; color: var(--text); }
+        .firm-tag .firm-tier { font-size: 0.75em; color: var(--text-muted); }
+
+        .criteria-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+        @media (max-width: 768px) { .criteria-grid { grid-template-columns: 1fr; } }
+        .criteria-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+        .criteria-value { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .criteria-label { font-size: 0.8em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+        .criteria-desc { font-size: 0.82em; color: var(--text-muted); margin-top: 8px; }
+
+        .confidence-meter { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+        .meter-bar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+        .meter-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .meter-fill.high { background: linear-gradient(90deg, var(--red), #EF4444); }
+        .meter-fill.medium { background: linear-gradient(90deg, var(--amber), #F59E0B); }
+        .meter-fill.low { background: linear-gradient(90deg, var(--green), #22C55E); }
+        .meter-label { font-size: 0.82em; color: var(--text-dim); min-width: 40px; text-align: right; }
+
+        .nav-link { display: inline-block; margin-bottom: 20px; color: var(--accent); text-decoration: none; font-size: 0.9em; }
+        .nav-link:hover { text-decoration: underline; }
+
+        footer { text-align: center; padding: 30px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.82em; margin-top: 40px; }
+
+        .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 40px; }
+        .toc-title { font-size: 0.8em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }
+        .toc a { display: block; color: var(--accent); text-decoration: none; padding: 5px 0; font-size: 0.92em; }
+        .toc a:hover { color: #fff; }
+
+        .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.78em; font-weight: 500; background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
+
+        .pending { background: var(--surface-2); border: 1px dashed var(--border); padding: 16px; border-radius: 8px; color: var(--text-muted); font-style: italic; margin: 12px 0; }
+        .pending::before { content: '[Pending Research] '; font-weight: 600; color: var(--amber); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="nav-link">&larr; Back to CRM Miss Analysis Dashboard</a>
+
+    <header>
+        <div class="logo">BASE<sup>10</sup> PARTNERS</div>
+        <h1>UIAgents: Preliminary Assessment</h1>
+        <p>CRM Miss Pattern Analysis Applied to Early-Stage Evaluation</p>
+        <div class="report-date">Prepared April 2, 2026 &middot; Confidential &middot; Internal Use Only</div>
+    </header>
+
+    <div class="toc">
+        <div class="toc-title">Contents</div>
+        <a href="#verdict">1. Verdict: Assessment Status</a>
+        <a href="#company">2. Company Snapshot</a>
+        <a href="#market-context">3. Market Context: AI Agents for UI Automation</a>
+        <a href="#assessment">4. Preliminary Assessment: What We Know & What We're Missing</a>
+        <a href="#market-opportunity">5. Market Opportunity Assessment</a>
+        <a href="#competitive-landscape">6. Competitive Landscape</a>
+        <a href="#research-gaps">7. Critical Research Gaps</a>
+        <a href="#recommendation">8. Evaluation Recommendation</a>
+    </div>
+
+    <!-- VERDICT -->
+    <section id="verdict">
+        <div class="verdict-box">
+            <div class="verdict-label">Evaluation Status</div>
+            <div class="verdict-score">TBD</div>
+            <div class="verdict-text">INSUFFICIENT DATA - NEEDS EVALUATION</div>
+            <div class="verdict-sub">UIAgents is being evaluated as an early-stage AI agents company in the rapidly expanding UI automation / RPA+AI space. Very limited public information available. This is a preliminary assessment pending deeper diligence: customer conversations, market sizing validation, team evaluation, and competitive positioning analysis.</div>
+        </div>
+    </section>
+
+    <!-- COMPANY SNAPSHOT -->
+    <section id="company">
+        <h2>Company Snapshot</h2>
+        <div class="stats-grid">
+            <div class="stat-card amber">
+                <div class="stat-value">TBD</div>
+                <div class="stat-label">Current ARR</div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-value">TBD</div>
+                <div class="stat-label">Customer Count</div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-value">TBD</div>
+                <div class="stat-label">Average ACV</div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-value">Under Eval</div>
+                <div class="stat-label">Stage</div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-value">TBD</div>
+                <div class="stat-label">Funding Raised</div>
+            </div>
+            <div class="stat-card amber">
+                <div class="stat-value">TBD</div>
+                <div class="stat-label">Series A Target</div>
+            </div>
+        </div>
+
+        <h3>Company Overview</h3>
+        <p class="highlight">UIAgents is an early-stage company operating in the AI agents for UI automation / computer use space. The company is positioned to address enterprise automation needs using AI-driven RPA (Robotic Process Automation) combined with modern AI agents.</p>
+
+        <div class="pending">No public website information found. No significant email correspondence in B10 systems. Limited external visibility as of April 2, 2026.</div>
+
+        <h3>Product Focus</h3>
+        <p>Based on naming and market positioning inference:</p>
+        <ul style="margin-left: 20px; color: var(--text-dim);">
+            <li>AI agents capable of automating UI-level tasks across enterprise applications</li>
+            <li>Computer use / agent automation functionality</li>
+            <li>Competitive positioning against traditional RPA vendors adding AI capabilities</li>
+            <li>Likely TAM: Enterprise process automation, IT operations, business process outsourcing</li>
+        </ul>
+    </section>
+
+    <!-- MARKET CONTEXT -->
+    <section id="market-context">
+        <h2>Market Context: AI Agents for UI Automation</h2>
+
+        <h3>Why This Space Matters in 2026</h3>
+        <p class="highlight">The AI agents category is the fastest-growing software segment in 2026. The market is experiencing explosive growth driven by advances in large language models and the need for enterprise automation at scale.</p>
+
+        <div class="signal-grid">
+            <div class="signal-card mixed">
+                <h4>Market Growth Trajectory</h4>
+                <p><strong>2024:</strong> $5.25B</p>
+                <p><strong>2025:</strong> $7.84B (+49% YoY)</p>
+                <p><strong>2030 Projection:</strong> $52.62B</p>
+                <p style="margin-top: 12px; color: var(--green);">CAGR 48-52% over 5 years. Fastest-growing enterprise software category.</p>
+            </div>
+            <div class="signal-card mixed">
+                <h4>Key Market Drivers</h4>
+                <ul style="margin-left: 16px; color: var(--text-dim); margin-top: 12px;">
+                    <li>Traditional RPA vendors (UiPath, Automation Anywhere) adding AI/LLM capabilities</li>
+                    <li>AI labs (Anthropic, OpenAI) releasing agent/computer use products</li>
+                    <li>Enterprise demand for cross-application automation without custom integration</li>
+                    <li>Labor cost arbitrage: automation of white-collar repetitive work</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Market Size Estimates</h3>
+        <p>The TAM for UI automation / AI agents spans multiple categories:</p>
+        <table>
+            <tr>
+                <th>Segment</th>
+                <th>Est. TAM</th>
+                <th>Growth Driver</th>
+            </tr>
+            <tr>
+                <td>Enterprise RPA (traditional)</td>
+                <td>$15-20B</td>
+                <td>Legacy process automation, migration to AI-native</td>
+            </tr>
+            <tr>
+                <td>AI Agents (new category)</td>
+                <td>$52.62B (2030)</td>
+                <td>Cross-functional automation, agent-native design</td>
+            </tr>
+            <tr>
+                <td>BPO/Offshore Services (at risk)</td>
+                <td>$80-100B</td>
+                <td>Potential displacement by AI agents, massive TAM for wedge</td>
+            </tr>
+            <tr>
+                <td>Enterprise IT Automation</td>
+                <td>$20-30B</td>
+                <td>DevOps, incident response, compliance automation</td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- PRELIMINARY ASSESSMENT -->
+    <section id="assessment">
+        <h2>Preliminary Assessment: What We Know & What We're Missing</h2>
+
+        <h3>What We Know</h3>
+        <div class="signal-card positive">
+            <h4>Positive Signals</h4>
+            <ul style="margin-left: 16px; margin-top: 12px; color: var(--text-dim);">
+                <li>Ade is actively evaluating the company (recent addition to evaluation pipeline)</li>
+                <li>Operating in the fastest-growing software category in 2026 (AI agents)</li>
+                <li>UI automation / computer use is a proven technology category (Anthropic, OpenAI shipping)</li>
+                <li>TAM is massive and expanding (RPA + AI agents + BPO displacement)</li>
+                <li>Market timing is optimal: AI agent adoption accelerating across enterprise</li>
+            </ul>
+        </div>
+
+        <h3>Critical Information Gaps</h3>
+        <div class="pending">Revenue / ARR: Unknown. No public information, no internal financial data available yet.</div>
+        <div class="pending">Customer base: Unknown. No customer references, case studies, or logos available.</div>
+        <div class="pending">Product status: Unknown. Current product capabilities, stage of development (MVP/beta/GA), roadmap.</div>
+        <div class="pending">Team composition: Unknown. Founder background, technical depth, commercial experience, prior exits.</div>
+        <div class="pending">Funding history: Unknown. Seed stage? Friends/family funded? Previous institutional investors?</div>
+        <div class="pending">Go-to-market strategy: Unknown. Land-and-expand vs. enterprise sales? Self-serve vs. sales-led?</div>
+        <div class="pending">Competitive differentiation: Unknown. Why UIAgents vs. UiPath/AA/Anthropic/OpenAI/other agents?</div>
+
+        <h3>Research Priority Matrix</h3>
+        <p style="margin-bottom: 20px; color: var(--text-dim);">To move from "insufficient data" to "informed decision," we need:</p>
+        <table>
+            <tr>
+                <th>Research Item</th>
+                <th>Priority</th>
+                <th>Method</th>
+                <th>Why It Matters</th>
+            </tr>
+            <tr>
+                <td>Customer conversations (2-3 design partners)</td>
+                <td style="color: var(--red); font-weight: 600;">CRITICAL</td>
+                <td>Direct outreach to named customers</td>
+                <td>Validates product-market fit and use case clarity</td>
+            </tr>
+            <tr>
+                <td>Founder/CEO background + vision</td>
+                <td style="color: var(--red); font-weight: 600;">CRITICAL</td>
+                <td>Founder intro call</td>
+                <td>Assesses execution risk and strategic clarity</td>
+            </tr>
+            <tr>
+                <td>ARR / MRR + growth trajectory</td>
+                <td style="color: var(--red); font-weight: 600;">CRITICAL</td>
+                <td>Data room / financial summary</td>
+                <td>Validates market traction and series readiness</td>
+            </tr>
+            <tr>
+                <td>Product demo + technical architecture</td>
+                <td style="color: var(--amber); font-weight: 600;">HIGH</td>
+                <td>Technical presentation</td>
+                <td>Assesses competitive moat and execution quality</td>
+            </tr>
+            <tr>
+                <td>Competitive positioning</td>
+                <td style="color: var(--amber); font-weight: 600;">HIGH</td>
+                <td>Founder + research calls</td>
+                <td>Clarifies why UIAgents wins vs. well-funded alternatives</td>
+            </tr>
+            <tr>
+                <td>Market sizing + wedge strategy</td>
+                <td style="color: var(--amber); font-weight: 600;">HIGH</td>
+                <td>Founder pitch deck</td>
+                <td>Defines expansion path and total addressable market</td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- MARKET OPPORTUNITY -->
+    <section id="market-opportunity">
+        <h2>Market Opportunity Assessment</h2>
+
+        <h3>Category Tailwinds: Why AI Agents Are Hot in 2026</h3>
+        <div class="quote-block">
+            "The AI agents category is the fastest-growing software category in 2026, with explosive growth driven by advances in large language models and enterprise automation demand."
+            <div class="quote-attr">- Market research consensus, Q1 2026</div>
+        </div>
+
+        <h3>TAM Potential</h3>
+        <p class="highlight">If UIAgents successfully captures share of the AI agents market and can move up-market from initial TAM wedge:</p>
+
+        <div class="criteria-grid">
+            <div class="criteria-card">
+                <div class="criteria-value">$15-20B</div>
+                <div class="criteria-label">Conservative TAM</div>
+                <div class="criteria-desc">Traditional RPA market replacement</div>
+            </div>
+            <div class="criteria-card">
+                <div class="criteria-value">$52.62B</div>
+                <div class="criteria-label">Growth TAM (2030)</div>
+                <div class="criteria-desc">Full AI agents category</div>
+            </div>
+            <div class="criteria-card">
+                <div class="criteria-value">$80-100B+</div>
+                <div class="criteria-label">Maximum TAM</div>
+                <div class="criteria-desc">If displacing BPO/offshore services</div>
+            </div>
+        </div>
+
+        <h3>Competitive Set</h3>
+        <p>UIAgents operates in a dynamic competitive landscape with both traditional and new entrants:</p>
+
+        <div class="firm-grid">
+            <div class="firm-tag">
+                <div class="firm-name">UiPath</div>
+                <div class="firm-tier">Tier 1 - Legacy RPA</div>
+            </div>
+            <div class="firm-tag">
+                <div class="firm-name">Automation Anywhere</div>
+                <div class="firm-tier">Tier 1 - Legacy RPA</div>
+            </div>
+            <div class="firm-tag">
+                <div class="firm-name">Blue Prism</div>
+                <div class="firm-tier">Tier 1 - Legacy RPA</div>
+            </div>
+            <div class="firm-tag">
+                <div class="firm-name">Anthropic (Claude)</div>
+                <div class="firm-tier">Tier 1 - AI Native</div>
+            </div>
+            <div class="firm-tag">
+                <div class="firm-name">OpenAI (Operator)</div>
+                <div class="firm-tier">Tier 1 - AI Native</div>
+            </div>
+            <div class="firm-tag">
+                <div class="firm-name">Google (Project Mariner)</div>
+                <div class="firm-tier">Tier 1 - AI Native</div>
+            </div>
+            <div class="firm-tag">
+                <div class="firm-name">ClickUp Automations</div>
+                <div class="firm-tier">Tier 2 - Category Adjacent</div>
+            </div>
+            <div class="firm-tag">
+                <div class="firm-name">Zapier</div>
+                <div class="firm-tier">Tier 2 - Integration Layer</div>
+            </div>
+        </div>
+
+        <h3>Competitive Positioning Questions</h3>
+        <p style="margin-bottom: 16px;">These are critical unknowns for UIAgents:</p>
+        <table>
+            <tr>
+                <th>Question</th>
+                <th>Implication</th>
+                <th>Status</th>
+            </tr>
+            <tr>
+                <td>Does UIAgents have proprietary approach to UI automation that competitors haven't cracked?</td>
+                <td>Defines defensibility vs. Anthropic/OpenAI agent infrastructure</td>
+                <td><span class="pattern-match medium">UNKNOWN</span></td>
+            </tr>
+            <tr>
+                <td>What is UIAgents' advantage vs. traditional RPA vendors adding AI?</td>
+                <td>Defines market timing and category leadership potential</td>
+                <td><span class="pattern-match medium">UNKNOWN</span></td>
+            </tr>
+            <tr>
+                <td>Can UIAgents achieve faster implementation/lower cost than incumbents?</td>
+                <td>Validates wedge strategy and initial GTM motion</td>
+                <td><span class="pattern-match medium">UNKNOWN</span></td>
+            </tr>
+            <tr>
+                <td>Who are early customers and what processes are they automating?</td>
+                <td>Clarifies actual use cases vs. theoretical TAM</td>
+                <td><span class="pattern-match medium">UNKNOWN</span></td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- COMPETITIVE LANDSCAPE -->
+    <section id="competitive-landscape">
+        <h2>Competitive Landscape</h2>
+
+        <h3>Why This Space Is Crowded (And Why That's Okay)</h3>
+        <p>Many large, well-funded competitors are entering the UI automation / AI agents space. This is not necessarily a negative signal—it confirms market demand is real and growing. However, it does mean UIAgents needs clear differentiation.</p>
+
+        <div class="signal-grid">
+            <div class="signal-card negative">
+                <h4>Incumbent RPA Vendors</h4>
+                <p><strong>Threat:</strong> UiPath, Automation Anywhere, Blue Prism have installed bases, enterprise relationships, and implementation expertise.</p>
+                <p style="margin-top: 12px; color: var(--text-muted);"><strong>Window:</strong> Transitioning legacy RPA to AI-native is slow. 2-3 year head start opportunity for pure-play AI agents.</p>
+            </div>
+            <div class="signal-card negative">
+                <h4>AI Lab Entrants</h4>
+                <p><strong>Threat:</strong> Anthropic (computer use), OpenAI (Operator), Google (Mariner) have foundational AI, brand, and enterprise relationships.</p>
+                <p style="margin-top: 12px; color: var(--text-muted);"><strong>Window:</strong> Building vertical solutions / GTM takes time. Opportunity for specialized players.</p>
+            </div>
+        </div>
+
+        <h3>Historical Pattern: UI Automation Category</h3>
+        <p>Similar competitive dynamics played out in RPA 2015-2020:</p>
+        <ul style="margin-left: 20px; margin-bottom: 16px; color: var(--text-dim);">
+            <li>Multiple entrants (Blue Prism, UiPath, Automation Anywhere, Pegasystems) competed in relatively new category</li>
+            <li>Winners emerged by combining: strong product, clear use case, effective GTM, and capital</li>
+            <li>Consolidation was limited—multiple companies achieved $1B+ valuations</li>
+            <li>Category TAM proved much larger than initial estimates as new use cases emerged</li>
+        </ul>
+        <p style="color: var(--text-muted);">Implication: Crowded market doesn't preclude winner-take-some outcomes. Depends on product, team, timing, and execution.</p>
+    </section>
+
+    <!-- RESEARCH GAPS -->
+    <section id="research-gaps">
+        <h2>Critical Research Gaps</h2>
+
+        <h3>What Must Be Answered Before Investment Decision</h3>
+
+        <div class="pattern-card">
+            <h4>1. Product-Market Fit Validation</h4>
+            <p style="margin-bottom: 12px;"><strong>What we need to know:</strong> Do customers have extreme pain points that UIAgents solves better than alternatives?</p>
+            <p style="color: var(--text-muted);">Gap: No customer conversations completed. No case studies or testimonials available. No public customer logos.</p>
+            <p style="margin-top: 12px; color: var(--green);"><strong>How to close:</strong> Schedule 2-3 customer reference calls. Ask about: workflow changes, ROI/payback, would they recommend, competitive comparisons.</p>
+        </div>
+
+        <div class="pattern-card">
+            <h4>2. Founder Evaluation</h4>
+            <p style="margin-bottom: 12px;"><strong>What we need to know:</strong> Is founder capable of building + scaling a $100M+ company? Track record?</p>
+            <p style="color: var(--text-muted);">Gap: No founder bio, prior experience, or vision statement in B10 systems. Unknown if first-time founder or serial entrepreneur.</p>
+            <p style="margin-top: 12px; color: var(--green);"><strong>How to close:</strong> Founder intro call. Due diligence on LinkedIn/reference checks. Assess: clarity of vision, execution track record, capital efficiency mindset.</p>
+        </div>
+
+        <div class="pattern-card">
+            <h4>3. Traction Validation</h4>
+            <p style="margin-bottom: 12px;"><strong>What we need to know:</strong> Is the company generating real revenue? Growth trajectory? Path to $10M ARR?</p>
+            <p style="color: var(--text-muted);">Gap: No financial data in B10 systems. ARR, MRR, customer count, cohort analysis all unknown.</p>
+            <p style="margin-top: 12px; color: var(--green);"><strong>How to close:</strong> Request financial summary / data room access. Analyze: ARR, growth rate (MoM %), unit economics, CAC payback, NRR.</p>
+        </div>
+
+        <div class="pattern-card">
+            <h4>4. Product Differentiation</h4>
+            <p style="margin-bottom: 12px;"><strong>What we need to know:</strong> Why does UIAgents win vs. Anthropic/OpenAI building their own agents? Architectural or GTM moat?</p>
+            <p style="color: var(--text-muted);">Gap: No product demo scheduled. No competitive positioning statement. No technical architecture overview.</p>
+            <p style="margin-top: 12px; color: var(--green);"><strong>How to close:</strong> Request product demo. Technical deep-dive on: architecture, reliance on third-party models vs. proprietary tech, reliability/uptime claims, API/integration surface.</p>
+        </div>
+
+        <div class="pattern-card">
+            <h4>5. Market Sizing & Wedge Strategy</h4>
+            <p style="margin-bottom: 12px;"><strong>What we need to know:</strong> Where is the initial wedge? How does it expand to $100M+ ARR?</p>
+            <p style="color: var(--text-muted);">Gap: No pitch deck, market sizing, or expansion strategy documented. TAM discussion incomplete.</p>
+            <p style="margin-top: 12px; color: var(--green);"><strong>How to close:</strong> Request pitch deck + market sizing appendix. Validate: wedge TAM, expansion TAM, customer use case concentration risk, pricing strategy.</p>
+        </div>
+    </section>
+
+    <!-- RECOMMENDATION -->
+    <section id="recommendation">
+        <h2>Evaluation Recommendation</h2>
+
+        <div class="rec-box alert">
+            <h4>Recommendation: Proceed with Active Evaluation - Do Not Pass Without Due Diligence</h4>
+            <p class="highlight">UIAgents operates in the fastest-growing software category in 2026. The market tailwinds are exceptional. However, there is insufficient data to make an investment decision at this time. Before passing, the team must complete: (1) customer reference calls, (2) founder evaluation, (3) financial/traction validation, (4) product differentiation assessment, and (5) market sizing validation.</p>
+        </div>
+
+        <h3>Why Active Evaluation Is Warranted</h3>
+        <div class="signal-grid">
+            <div class="signal-card positive">
+                <h4>Market Timing</h4>
+                <ul style="margin-left: 16px; margin-top: 12px; color: var(--text-dim);">
+                    <li>AI agents category: $5.25B (2024) → $52.62B (2030)</li>
+                    <li>48-52% CAGR—fastest-growing enterprise software</li>
+                    <li>2026 is inflection point: Anthropic, OpenAI shipping agent products</li>
+                    <li>Traditional RPA vendors (UiPath, AA) in transition—window for pure-play winners</li>
+                </ul>
+            </div>
+            <div class="signal-card positive">
+                <h4>Category Dynamics</h4>
+                <ul style="margin-left: 16px; margin-top: 12px; color: var(--text-dim);">
+                    <li>Crowded field ≠ no winners. RPA had multiple $1B+ exits despite competition.</li>
+                    <li>Winners emerge through: product excellence + clear wedge + strong GTM + capital</li>
+                    <li>TAM expansion typical in automation categories</li>
+                    <li>B10's thesis: companies solving hard automation problems at scale can be large</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Specific Action Plan</h3>
+        <table>
+            <tr><th>Action</th><th>Priority</th><th>Owner</th><th>Timeline</th></tr>
+            <tr>
+                <td>Schedule founder intro + basic background check</td>
+                <td style="color: var(--red); font-weight: 600;">CRITICAL</td>
+                <td>Ade</td>
+                <td>This week</td>
+            </tr>
+            <tr>
+                <td>Request financial summary / data room access</td>
+                <td style="color: var(--red); font-weight: 600;">CRITICAL</td>
+                <td>Ade</td>
+                <td>This week</td>
+            </tr>
+            <tr>
+                <td>Schedule 2-3 customer reference calls</td>
+                <td style="color: var(--red); font-weight: 600;">CRITICAL</td>
+                <td>Ade / Founder</td>
+                <td>Next 7-10 days</td>
+            </tr>
+            <tr>
+                <td>Request pitch deck + detailed market sizing</td>
+                <td style="color: var(--amber); font-weight: 600;">HIGH</td>
+                <td>Ade</td>
+                <td>Next 3-5 days</td>
+            </tr>
+            <tr>
+                <td>Schedule technical product demo</td>
+                <td style="color: var(--amber); font-weight: 600;">HIGH</td>
+                <td>Ade / Technical team</td>
+                <td>Next 10-14 days</td>
+            </tr>
+            <tr>
+                <td>Complete IC evaluation discussion</td>
+                <td style="color: var(--amber); font-weight: 600;">HIGH</td>
+                <td>Ade / Rexhi</td>
+                <td>After diligence (10-14 days)</td>
+            </tr>
+        </table>
+
+        <h3>Key Decision Criteria for IC Discussion</h3>
+        <p style="margin-bottom: 16px;">Once diligence is complete, evaluate UIAgents against these B10 investment criteria:</p>
+        <table>
+            <tr>
+                <th>Criteria</th>
+                <th>Passing Grade</th>
+                <th>Questions to Resolve</th>
+            </tr>
+            <tr>
+                <td><strong>Customer Love</strong></td>
+                <td>Customers confirm 2-3x productivity improvement or equivalent ROI</td>
+                <td>Do reference calls validate "step-change" or just "incremental improvement"?</td>
+            </tr>
+            <tr>
+                <td><strong>Founder Quality</strong></td>
+                <td>Prior scaling experience or exceptional execution track record</td>
+                <td>Can founder clearly articulate product vision, TAM, and GTM?</td>
+            </tr>
+            <tr>
+                <td><strong>Traction</strong></td>
+                <td>Path to $2-5M ARR within 12 months (or demonstrated 3-4x growth trajectory)</td>
+                <td>What is current ARR? Growth rate (MoM %)? Unit economics reasonable?</td>
+            </tr>
+            <tr>
+                <td><strong>Product Differentiation</strong></td>
+                <td>Clear advantage vs. AI labs + RPA vendors (tech, GTM, or vertical specialization)</td>
+                <td>Why does UIAgents win if Anthropic/OpenAI decide to build this themselves?</td>
+            </tr>
+            <tr>
+                <td><strong>Market Sizing</strong></td>
+                <td>Credible $500M+ TAM wedge, expansion path to $2-5B+</td>
+                <td>Is wedge realistic? Can company expand beyond initial use case?</td>
+            </tr>
+            <tr>
+                <td><strong>Valuation</strong></td>
+                <td>Reasonable Series A price (typically 3-5x Series Seed for strong traction)</td>
+                <td>What is founder's target raise size and valuation expectation?</td>
+            </tr>
+        </table>
+
+        <h3>Scenario Analysis</h3>
+
+        <h4>Scenario 1: Pass Without Diligence (Risk)</h4>
+        <p style="color: var(--text-dim);">If Base10 passes on UIAgents without completing customer conversations + founder evaluation:</p>
+        <ul style="margin-left: 20px; color: var(--text-dim); margin-bottom: 16px;">
+            <li>Company likely raises $15-30M from Tier 1 VC firms within 60 days (hot category)</li>
+            <li>If product is strong (unknown), ARR accelerates 3-5x within 12 months</li>
+            <li>Appears in next CRM Miss Analysis as Tier 1-2 miss ("passed on fastest-growing software category")</li>
+            <li>Base10 loses allocation opportunity in a $52.62B market category</li>
+        </ul>
+
+        <h4>Scenario 2: Invest After Diligence (Upside)</h4>
+        <p style="color: var(--green);">If diligence validates strong product, customer demand, and founder capability:</p>
+        <ul style="margin-left: 20px; color: var(--green); margin-bottom: 16px;">
+            <li>Base10 participates in Series A of potential 10x+ return category</li>
+            <li>Early allocation in AI agents space during market inflection</li>
+            <li>Portfolio company in fastest-growing software category</li>
+        </ul>
+
+        <h4>Scenario 3: Pass After Due Diligence (Informed Pass)</h4>
+        <p style="color: var(--text-muted);">If diligence reveals weak product, weak founder, or unclear market traction:</p>
+        <ul style="margin-left: 20px; color: var(--text-muted);">
+            <li>Pass is informed and based on evidence</li>
+            <li>Avoids miss risk of "passing without looking"</li>
+            <li>Maintains B10 thesis discipline</li>
+        </ul>
+    </section>
+
+    <footer>
+        <p>Confidential &middot; Prepared by Adeyemi Ajao - Base10 Partners</p>
+        <p>CRM Miss Analysis Framework v1.0 &middot; Preliminary Assessment Status &middot; Generated April 2, 2026</p>
+        <p style="margin-top: 8px;"><a href="index.html" style="color: var(--accent); text-decoration: none;">Back to CRM Miss Analysis Dashboard &rarr;</a></p>
+    </footer>
+</div>
+
+<script>
+// Market Opportunity Chart
+const marketCtx = document.getElementById('marketChart');
+const compChartCtx = document.getElementById('compChart');
+
+// Check if charts exist before creating
+if (document.getElementById('marketChart')) {
+    new Chart(marketCtx, {
+        type: 'line',
+        data: {
+            labels: ['2024', '2025', '2026', '2027', '2028', '2029', '2030'],
+            datasets: [{
+                label: 'AI Agents Market Size (Est.)',
+                data: [5.25, 7.84, 11.0, 16.5, 24.7, 37.0, 52.62],
+                borderColor: '#45AEEB',
+                backgroundColor: 'rgba(69, 174, 235, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointBackgroundColor: '#45AEEB',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: 'AI Agents Market Growth (Billions USD)', color: '#E8EDF4', font: { size: 14, weight: 600 } },
+                legend: { labels: { color: '#8899B0', font: { size: 11 } } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#8899B0', callback: v => '$' + v.toFixed(1) + 'B' },
+                    grid: { color: 'rgba(36,51,82,0.5)' }
+                },
+                x: {
+                    ticks: { color: '#8899B0' },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// Competitive positioning radar (if second chart exists)
+if (document.getElementById('compChart')) {
+    new Chart(compChartCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Product Market Fit', 'Growth Rate', 'Market Timing', 'Founder Capability', 'Competitive Moat', 'Execution Risk', 'TAM Expansion'],
+            datasets: [{
+                label: 'UIAgents (Estimated Potential)',
+                data: [50, 50, 95, 50, 50, 50, 90],
+                backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                borderColor: '#FBBF24',
+                borderWidth: 2,
+                pointBackgroundColor: '#FBBF24',
+                pointRadius: 4
+            }, {
+                label: 'Required for B10 Invest',
+                data: [75, 65, 70, 75, 60, 70, 70],
+                backgroundColor: 'rgba(69, 174, 235, 0.1)',
+                borderColor: '#45AEEB',
+                borderWidth: 1,
+                borderDash: [5, 5],
+                pointRadius: 2,
+                pointBackgroundColor: '#45AEEB'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: 'Evaluation Readiness Assessment', color: '#E8EDF4', font: { size: 14, weight: 600 } },
+                legend: { labels: { color: '#8899B0', font: { size: 11 } } }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { display: false },
+                    grid: { color: 'rgba(36,51,82,0.5)' },
+                    pointLabels: { color: '#8899B0', font: { size: 10 } },
+                    angleLines: { color: 'rgba(36,51,82,0.5)' }
+                }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
