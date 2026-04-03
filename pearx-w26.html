@@ -456,7 +456,7 @@
             <div class="header-meta">
                 <div>
                     <div><strong>April 2, 2026</strong></div>
-                    <div>Ade Ajao & Rexhi Dollaku â Base10 Partners</div>
+                    <div>Ade Ajao & Rexhi Dollaku &mdash; Base10 Partners</div>
                 </div>
                 <div style="text-align: right;">
                     <strong>Pear Venture Partners</strong>
@@ -514,7 +514,7 @@
 
         <h2>Claude Consensus Probability Analysis Methodology</h2>
         <div class="section-intro">
-            <strong>Consensus Probability Score:</strong> Independent assessment of each company's probability of achieving consensus â defined as raising $25M+ from a Top-50 venture firm within 18 months. Based on five investment signal dimensions and miss prediction patterns from the CRM Miss Analysis framework.
+            <strong>Consensus Probability Score:</strong> Independent assessment of each company's probability of achieving consensus &mdash; defined as raising $25M+ from a Top-50 venture firm within 18 months. Based on five investment signal dimensions and miss prediction patterns from the CRM Miss Analysis framework.
             <br><br>
             <strong>Five Scoring Dimensions:</strong> Customer Love & GTM Repeatability (25%) | Growth Trajectory (20%) | Market Size - Platform Perspective (20%) | Founder Quality (20%) | Competitive Moat (15%)
             <br><br>
@@ -566,8 +566,8 @@
         </div>
 
         <footer>
-            <strong>Prepared by Ade Ajao & Rexhi Dollaku â Base10 Partners</strong>
-            <div style="margin-top: 10px; font-size: 0.8rem;">Confidential â For Internal Use Only</div>
+            <strong>Prepared by Ade Ajao & Rexhi Dollaku &mdash; Base10 Partners</strong>
+            <div style="margin-top: 10px; font-size: 0.8rem;">Confidential &mdash; For Internal Use Only</div>
             <div class="footer-links">
                 <a href="index.html">Back to Index</a>
                 <a href="https://base10.vc" target="_blank">base10.vc</a>
@@ -608,7 +608,7 @@
                 leadPartner: "Ajay Kamat",
                 keySignal: "National security + labor shortage urgency + MIT pedigree",
                 dimensions: { customerLove: 5, growthTrajectory: 5, marketSize: 5, founderQuality: 5, competitiveMoat: 5 },
-                missFlags: "None â near-certain consensus pattern",
+                missFlags: "None &mdash; near-certain consensus pattern",
                 fitAnalysis: "Tier 1 fit for Base10. Domain-expert founders in vertical AI solving $50B labor shortage with defense implications."
             },
             {
@@ -710,7 +710,7 @@
                 leadPartner: "Pear Partner",
                 keySignal: "Industrial procurement + AI agents",
                 dimensions: { customerLove: 3, growthTrajectory: 3, marketSize: 5, founderQuality: 3, competitiveMoat: 3 },
-                missFlags: "Market Size (TAM) potentially Static â actual serviceable market may exceed initial positioning",
+                missFlags: "Market Size (TAM) potentially Static &mdash; actual serviceable market may exceed initial positioning",
                 fitAnalysis: "Strong fit. Multi-trillion TAM with AI automation unlocking value."
             },
             {
@@ -727,7 +727,7 @@
                 leadPartner: "Arash Afrakhteh",
                 keySignal: "Frontier AI security + Anthropic collaboration + WSJ coverage",
                 dimensions: { customerLove: 4, growthTrajectory: 4, marketSize: 4, founderQuality: 5, competitiveMoat: 5 },
-                missFlags: "None â frontier AI security first-mover",
+                missFlags: "None &mdash; frontier AI security first-mover",
                 fitAnalysis: "Strong fit. Frontier AI security with published research and Anthropic validation."
             },
             {
@@ -744,7 +744,7 @@
                 leadPartner: "Shravan Reddy",
                 keySignal: "Amazon supply chain + research credentials",
                 dimensions: { customerLove: 4, growthTrajectory: 4, marketSize: 5, founderQuality: 5, competitiveMoat: 4 },
-                missFlags: "None â validated founder + $10T TAM",
+                missFlags: "None &mdash; validated founder + $10T TAM",
                 fitAnalysis: "Strong fit. Amazon supply chain background + published ML researcher in $10T+ market."
             },
             {
@@ -795,7 +795,7 @@
                 leadPartner: "Pear Partner (connected to Pejman Nozad)",
                 keySignal: "Manufacturing OS + AWS pedigree + $84B TAM",
                 dimensions: { customerLove: 4, growthTrajectory: 4, marketSize: 4, founderQuality: 4, competitiveMoat: 4 },
-                missFlags: "Static TAM risk â actual manufacturing data platform TAM likely exceeds $84B",
+                missFlags: "Static TAM risk &mdash; actual manufacturing data platform TAM likely exceeds $84B",
                 fitAnalysis: "Strong fit. Manufacturing OS positioning + AWS team + $84B visible market (likely understated)."
             }
         ];
@@ -894,7 +894,7 @@
                                 <span class="dimension-score">${c.dimensions.competitiveMoat}/5</span>
                             </div>
                         </div>
-                        ${c.missFlags !== 'None identified' && c.missFlags !== 'None â near-certain consensus pattern' && c.missFlags !== 'None â frontier AI security first-mover' && c.missFlags !== 'None â validated founder + $10T TAM' ? `
+                        ${c.missFlags !== 'None identified' && c.missFlags !== 'None &mdash; near-certain consensus pattern' && c.missFlags !== 'None &mdash; frontier AI security first-mover' && c.missFlags !== 'None &mdash; validated founder + $10T TAM' ? `
                         <div class="miss-flags">
                             <strong>Miss Pattern Flags:</strong> ${c.missFlags}
                         </div>
@@ -1003,10 +1003,10 @@
                             companies.filter(c => c.rexhiRating === 3).length,
                             companies.filter(c => c.rexhiRating === 2).length
                         ],
-                        backgroundColor: ['var(--green)', 'var(--green)', 'var(--amber)', 'var(--red)'],
+                        backgroundColor: ['#34D399', '#34D399', '#FBBF24', '#F87171'],
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8899B0' }, grid: { color: '#243352' } }, y: { ticks: { color: '#8899B0' }, grid: { color: '#243352' } } } }
             });
 
             // Base10 fit
@@ -1021,10 +1021,10 @@
                             companies.filter(c => c.base10Fit === 'Moderate').length,
                             companies.filter(c => c.base10Fit === 'Weak').length
                         ],
-                        backgroundColor: ['var(--green)', 'var(--amber)', 'var(--red)'],
+                        backgroundColor: ['#34D399', '#FBBF24', '#F87171'],
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8899B0' } } } }
             });
 
             // Sector distribution
@@ -1040,10 +1040,10 @@
                     labels: Object.keys(sectorCounts),
                     datasets: [{
                         data: Object.values(sectorCounts),
-                        backgroundColor: ['var(--accent)', 'var(--green)', 'var(--amber)', 'var(--red)', '#A78BFA', '#38BDF8']
+                        backgroundColor: ['#45AEEB', '#34D399', '#FBBF24', '#F87171', '#A78BFA', '#38BDF8']
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8899B0' } } } }
             });
 
             // Consensus distribution
@@ -1060,10 +1060,10 @@
                             companies.filter(c => c.consensusScore === 3).length,
                             companies.filter(c => c.consensusScore === 2).length
                         ],
-                        backgroundColor: ['var(--green)', 'var(--green)', 'var(--amber)', 'var(--red)'],
+                        backgroundColor: ['#34D399', '#34D399', '#FBBF24', '#F87171'],
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8899B0' }, grid: { color: '#243352' } }, y: { ticks: { color: '#8899B0' }, grid: { color: '#243352' } } } }
             });
         }
 
